@@ -315,17 +315,16 @@ Title:''';
       _streamingSummary = "";
     });
 
-    // Truncate transcript to ~3000 chars to keep inference fast on-device
+    // Truncate transcript to keep prompt within context window.
+    // ~2000 chars is plenty for the model to extract key points.
+    // Shorter input = more room for output tokens.
     String transcript = _transcriptText ?? '';
-    if (transcript.length > 3000) {
-      transcript = '${transcript.substring(0, 3000)}\n\n[...transcript truncated for summarization...]';
+    if (transcript.length > 2000) {
+      transcript = '${transcript.substring(0, 2000)}\n\n[...transcript continues...]';
     }
 
-    // Adaptive token budget: longer transcripts need more room for the summary JSON
-    // Attempt 2 gets a generous bump to handle edge cases
-    final int maxTokens = attempt > 1
-        ? 2048
-        : transcript.length > 2000 ? 1536 : 1024;
+    // Generous token budget — summary JSON can be verbose
+    const int maxTokens = 2048;
 
     final prompt = '''You are a professional meeting assistant. Summarize the transcript below.
 
@@ -360,6 +359,7 @@ $transcript''';
           if (mounted) {
             // Post-process: strip markdown code fences, extract JSON, and clean values
             String cleaned = _streamingSummary.trim();
+            debugPrint('[Kraken AI] Raw output (${cleaned.length} chars, attempt $attempt): ${cleaned.substring(0, cleaned.length.clamp(0, 300))}...');
             // Strip code fences
             if (cleaned.startsWith('```')) {
               final lines = cleaned.split('\n');
@@ -390,9 +390,13 @@ $transcript''';
                 }
                 cleaned = jsonEncode(sanitized);
                 isValidJson = true;
+                debugPrint('[Kraken AI] Valid JSON produced on attempt $attempt');
+              } else {
+                debugPrint('[Kraken AI] JSON parsed but missing required keys: ${parsed.keys.toList()}');
               }
-            } catch (_) {
-              // JSON parsing failed — output is not usable
+            } catch (e) {
+              debugPrint('[Kraken AI] JSON parse failed on attempt $attempt: $e');
+              debugPrint('[Kraken AI] Cleaned text was: ${cleaned.substring(0, cleaned.length.clamp(0, 500))}');
             }
 
             if (isValidJson) {
