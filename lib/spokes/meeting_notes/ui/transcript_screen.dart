@@ -320,16 +320,21 @@ Title:''';
       transcript = '${transcript.substring(0, 3000)}\n\n[...transcript truncated for summarization...]';
     }
 
-    final prompt = '''Summarize this meeting transcript into a structured report.
+    final prompt = '''You are a professional meeting assistant. Summarize the transcript below.
 
-Return ONLY valid JSON in this exact format, nothing else:
-{"tldr": "A 1-2 sentence executive summary", "key_points": ["point 1", "point 2"], "decisions": ["decision 1", "decision 2"], "action_items": ["action 1", "action 2"], "open_questions": ["question 1", "question 2"]}
+You must return ONLY a JSON object. Do not include any explanation, commentary, or formatting outside the JSON.
 
-IMPORTANT RULES:
-- Write all text in plain, natural English. No code, no markup, no special formatting.
-- Do not use escape characters, backslashes, or markdown syntax in the values.
-- If a section has no items, use an empty array [].
-- Keep each item concise (1 sentence max).
+Use this exact structure:
+{"tldr": "...", "key_points": ["..."], "decisions": ["..."], "action_items": ["..."], "open_questions": ["..."]}
+
+Rules for writing the values:
+- Write in plain conversational English, as if speaking to a colleague.
+- Never use programming syntax: no backslashes, no escape sequences, no \n, no \t, no \".
+- Never use markdown: no **, no `, no ```, no #, no bullet characters.
+- Never use HTML tags or any markup language.
+- Use normal punctuation: periods, commas, question marks.
+- If a category has no items, use an empty array [].
+- Keep each bullet to one clear sentence.
 
 Transcript:
 $transcript''';
@@ -346,13 +351,36 @@ $transcript''';
         },
         onDone: () async {
           if (mounted) {
-            // Post-process: strip markdown code fences and trim
+            // Post-process: strip markdown code fences, extract JSON, and clean values
             String cleaned = _streamingSummary.trim();
+            // Strip code fences
             if (cleaned.startsWith('```')) {
               final lines = cleaned.split('\n');
               if (lines.length > 2) {
-                cleaned = lines.sublist(1, lines.length - (lines.last.trim() == '```' ? 1 : 0)).join('\n').trim();
+                cleaned = lines.sublist(1, lines.length - (lines.last.trim().startsWith('```') ? 1 : 0)).join('\n').trim();
               }
+            }
+            // Extract JSON object if surrounded by text
+            final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(cleaned);
+            if (jsonMatch != null) {
+              cleaned = jsonMatch.group(0)!;
+            }
+            // Deep-clean: parse JSON, sanitize each value, re-encode
+            try {
+              final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
+              final sanitized = <String, dynamic>{};
+              for (final entry in parsed.entries) {
+                if (entry.value is String) {
+                  sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+                } else if (entry.value is List) {
+                  sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+                } else {
+                  sanitized[entry.key] = entry.value;
+                }
+              }
+              cleaned = jsonEncode(sanitized);
+            } catch (_) {
+              // If JSON parsing fails, keep the string as-is for the fallback renderer
             }
             
             setState(() {
@@ -449,13 +477,19 @@ $existingSummary
 
 The user wants you to refine it with this instruction: "$instruction"
 
-Return ONLY valid JSON in this exact format, nothing else:
-{"tldr": "A 1-2 sentence executive summary", "key_points": ["point 1", "point 2"], "decisions": ["decision 1", "decision 2"], "action_items": ["action 1", "action 2"], "open_questions": ["question 1", "question 2"]}
+Return ONLY a JSON object with the refined summary. No explanation, no commentary outside the JSON.
 
-IMPORTANT RULES:
-- Write all text in plain, natural English. No code, no markup, no special formatting.
-- Do not use escape characters, backslashes, or markdown syntax in the values.
-- If a section has no items, use an empty array []. Keep each item concise.
+Use this exact structure:
+{"tldr": "...", "key_points": ["..."], "decisions": ["..."], "action_items": ["..."], "open_questions": ["..."]}
+
+Rules for writing the values:
+- Write in plain conversational English, as if speaking to a colleague.
+- Never use programming syntax: no backslashes, no escape sequences, no \n, no \t.
+- Never use markdown: no **, no `, no ```, no #, no bullet characters.
+- Never use HTML tags or any markup language.
+- Use normal punctuation only.
+- If a category has no items, use an empty array [].
+- Keep each bullet to one clear sentence.
 
 Original transcript for reference:
 $transcript''';
@@ -473,12 +507,33 @@ $transcript''';
         onDone: () async {
           if (mounted) {
             String cleaned = _streamingSummary.trim();
+            // Strip code fences
             if (cleaned.startsWith('```')) {
               final lines = cleaned.split('\n');
               if (lines.length > 2) {
-                cleaned = lines.sublist(1, lines.length - (lines.last.trim() == '```' ? 1 : 0)).join('\n').trim();
+                cleaned = lines.sublist(1, lines.length - (lines.last.trim().startsWith('```') ? 1 : 0)).join('\n').trim();
               }
             }
+            // Extract JSON object if surrounded by text
+            final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(cleaned);
+            if (jsonMatch != null) {
+              cleaned = jsonMatch.group(0)!;
+            }
+            // Deep-clean: parse JSON, sanitize each value, re-encode
+            try {
+              final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
+              final sanitized = <String, dynamic>{};
+              for (final entry in parsed.entries) {
+                if (entry.value is String) {
+                  sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+                } else if (entry.value is List) {
+                  sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+                } else {
+                  sanitized[entry.key] = entry.value;
+                }
+              }
+              cleaned = jsonEncode(sanitized);
+            } catch (_) {}
             setState(() {
               _summaryJson = cleaned;
               _isGeneratingSummary = false;
@@ -509,15 +564,21 @@ $transcript''';
   /// Strips code-like artifacts that small LLMs sometimes leak into summary text.
   String _cleanSummaryText(String text) {
     return text
-        .replaceAll(RegExp(r'```\w*\n?'), '')     // code fences
-        .replaceAll(RegExp(r'\\n'), ' ')           // literal \n
-        .replaceAll(RegExp(r'\\t'), ' ')           // literal \t
-        .replaceAll(RegExp(r'\\"'), '"')            // escaped quotes
-        .replaceAll(RegExp(r"\\\'"), "'")           // escaped single quotes
-        .replaceAll(RegExp(r'\\\\'), '')            // double backslashes
-        .replaceAll(RegExp(r'\*\*'), '')            // bold markdown
-        .replaceAll(RegExp(r'^\s*[-*]\s*', multiLine: true), '') // leading bullets (already displayed as list items)
-        .replaceAll(RegExp(r'\s{2,}'), ' ')        // collapse whitespace
+        .replaceAll(RegExp(r'```\w*\n?'), '')         // code fences
+        .replaceAll('\\n', ' ')                       // literal \n (escaped newline)
+        .replaceAll('\\t', ' ')                       // literal \t (escaped tab)
+        .replaceAll('\\"', '"')                       // escaped double quotes
+        .replaceAll("\\\'" , "'")                     // escaped single quotes
+        .replaceAll('\\\\', '')                       // double backslashes
+        .replaceAll(RegExp(r'\*\*'), '')              // bold markdown **
+        .replaceAll(RegExp(r'__'), '')                // bold markdown __
+        .replaceAll(RegExp(r'`([^`]*)`'), r'\1')     // inline code `text`
+        .replaceAll(RegExp(r'#{1,6}\s*'), '')         // heading markers
+        .replaceAll(RegExp(r'^\s*[-*•]\s*', multiLine: true), '') // leading bullets
+        .replaceAll(RegExp(r'^\s*\d+\.\s*', multiLine: true), '') // numbered lists
+        .replaceAll(RegExp(r'<[^>]+>'), '')           // HTML tags
+        .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'\1') // markdown links
+        .replaceAll(RegExp(r'\s{2,}'), ' ')           // collapse whitespace
         .trim();
   }
 
