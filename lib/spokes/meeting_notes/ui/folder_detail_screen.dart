@@ -176,6 +176,42 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
     }
   }
 
+  // 2A-32: Batch transcribe selected recordings
+  Future<void> _transcribeSelected() async {
+    final selected = _recordings.where((r) => _selectedIds.contains(r.id)).toList();
+    final untranscribed = selected.where((r) => r.transcriptionStatus == null || r.transcriptionStatus == 'failed').toList();
+
+    if (untranscribed.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All selected recordings are already transcribed or queued.')),
+        );
+      }
+      return;
+    }
+
+    final engine = TranscriptionEngine();
+    final vault = RepositoryProvider.of<VaultService>(context, listen: false);
+
+    for (final rec in untranscribed) {
+      await engine.queueJob(vault, rec.audioPath);
+    }
+
+    _exitSelectionMode();
+    _loadRecordings();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Queued ${untranscribed.length} recording${untranscribed.length > 1 ? 's' : ''} for transcription.')),
+      );
+    }
+  }
+
+  // H3-56: Sanitize title (strip control chars, enforce 100-char limit)
+  String _sanitizeTitle(String input) {
+    return input.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
+  }
+
   Future<void> _showRenameRecordingDialog(Recording rec) async {
     final controller = TextEditingController(text: rec.title);
     final newName = await showDialog<String>(
@@ -186,12 +222,14 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
         content: TextField(
           controller: controller,
           autofocus: true,
+          maxLength: 100, // H3-56: 100-char limit
           style: KrakenText.bodyLg(),
           decoration: InputDecoration(
             hintText: 'Enter recording title',
             hintStyle: KrakenText.bodyMd(color: KrakenColors.textSecondary),
             filled: true,
             fillColor: KrakenColors.bg,
+            counterStyle: KrakenText.bodySm(color: KrakenColors.textMuted),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(KrakenRadius.md),
               borderSide: BorderSide(color: KrakenColors.border),
@@ -201,7 +239,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
               borderSide: const BorderSide(color: KrakenColors.accent),
             ),
           ),
-          onSubmitted: (val) => Navigator.pop(ctx, val.trim()),
+          onSubmitted: (val) => Navigator.pop(ctx, _sanitizeTitle(val)),
         ),
         actions: [
           TextButton(
@@ -210,7 +248,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: KrakenColors.accent),
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            onPressed: () => Navigator.pop(ctx, _sanitizeTitle(controller.text)),
             child: const Text('Save'),
           ),
         ],
@@ -218,8 +256,26 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
     );
 
     if (newName != null && newName.isNotEmpty && newName != rec.title) {
+      final oldName = rec.title;
       await _folderRepo.renameRecording(rec.id, newName);
       _loadRecordings();
+
+      // H3-57: 5-second undo banner
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Renamed to "$newName"'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () async {
+                await _folderRepo.renameRecording(rec.id, oldName);
+                _loadRecordings();
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -462,6 +518,12 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
               icon: const Icon(Icons.ios_share, color: KrakenColors.accent),
               tooltip: 'Export Selected',
               onPressed: _selectedIds.isNotEmpty ? _exportSelected : null,
+            ),
+            // 2A-32: Transcribe All batch action
+            IconButton(
+              icon: const Icon(Icons.record_voice_over, color: KrakenColors.accent),
+              tooltip: 'Transcribe Selected',
+              onPressed: _selectedIds.isNotEmpty ? _transcribeSelected : null,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),

@@ -33,6 +33,9 @@ class _MeetingNotesMainScreenState extends State<MeetingNotesMainScreen> with Si
   late final AnimationController _glowController;
   late final Animation<double> _glowAnimation;
 
+  // Folder sort (2B-14)
+  String _folderSort = 'recent'; // recent, az, count
+
   // Search state
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
@@ -119,7 +122,26 @@ class _MeetingNotesMainScreenState extends State<MeetingNotesMainScreen> with Si
         _folderStates = states;
         _isLoading = false;
       });
+      _sortFolders();
     }
+  }
+
+  // 2B-14: Sort folders by selected criteria
+  void _sortFolders() {
+    setState(() {
+      switch (_folderSort) {
+        case 'az':
+          _folders.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          break;
+        case 'count':
+          _folders.sort((a, b) => (_recordingCounts[b.id] ?? 0).compareTo(_recordingCounts[a.id] ?? 0));
+          break;
+        case 'recent':
+        default:
+          // Default order from DB (most recent first)
+          break;
+      }
+    });
   }
 
   Future<void> _createNewFolder() async {
@@ -554,6 +576,48 @@ class _MeetingNotesMainScreenState extends State<MeetingNotesMainScreen> with Si
           IconButton(
             icon: const Icon(Icons.search, color: KrakenColors.textPrimary),
             onPressed: _openSearch,
+          ),
+          // 2B-14: Folder sort
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort, color: KrakenColors.textPrimary),
+            tooltip: 'Sort folders',
+            color: KrakenColors.surfaceElevated,
+            onSelected: (value) {
+              _folderSort = value;
+              _sortFolders();
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'recent',
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 18, color: _folderSort == 'recent' ? KrakenColors.accent : KrakenColors.textMuted),
+                    const SizedBox(width: 8),
+                    Text('Most Recent', style: TextStyle(color: _folderSort == 'recent' ? KrakenColors.accent : KrakenColors.textPrimary)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'az',
+                child: Row(
+                  children: [
+                    Icon(Icons.sort_by_alpha, size: 18, color: _folderSort == 'az' ? KrakenColors.accent : KrakenColors.textMuted),
+                    const SizedBox(width: 8),
+                    Text('A → Z', style: TextStyle(color: _folderSort == 'az' ? KrakenColors.accent : KrakenColors.textPrimary)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'count',
+                child: Row(
+                  children: [
+                    Icon(Icons.format_list_numbered, size: 18, color: _folderSort == 'count' ? KrakenColors.accent : KrakenColors.textMuted),
+                    const SizedBox(width: 8),
+                    Text('Most Recordings', style: TextStyle(color: _folderSort == 'count' ? KrakenColors.accent : KrakenColors.textPrimary)),
+                  ],
+                ),
+              ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.file_download_outlined, color: KrakenColors.textPrimary),
