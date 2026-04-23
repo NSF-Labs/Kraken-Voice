@@ -6,15 +6,23 @@ import 'package:permission_handler/permission_handler.dart';
 /// If denied, shows a friendly explanation screen.
 class PermissionHelper {
   /// Request microphone permission. Returns true if granted.
+  /// Also requests phone state permission for call auto-pause (optional).
   static Future<bool> ensureMicrophonePermission(BuildContext context) async {
     final status = await Permission.microphone.status;
     
-    if (status.isGranted) return true;
+    if (status.isGranted) {
+      // Microphone already granted — request phone state silently
+      _requestPhoneStateIfNeeded();
+      return true;
+    }
     
     if (status.isDenied) {
       // First time or soft denial — request it
       final result = await Permission.microphone.request();
-      if (result.isGranted) return true;
+      if (result.isGranted) {
+        _requestPhoneStateIfNeeded();
+        return true;
+      }
     }
     
     // Permanently denied or denied after request — show explanation
@@ -31,6 +39,16 @@ class PermissionHelper {
     }
     
     return false;
+  }
+
+  /// Request READ_PHONE_STATE for phone call auto-pause (H1-53).
+  /// This is optional — if denied, recording simply won't auto-pause
+  /// during phone calls.
+  static Future<void> _requestPhoneStateIfNeeded() async {
+    final phoneStatus = await Permission.phone.status;
+    if (phoneStatus.isDenied) {
+      await Permission.phone.request();
+    }
   }
 }
 

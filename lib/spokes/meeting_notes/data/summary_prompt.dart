@@ -7,25 +7,25 @@ class SummaryPrompt {
   SummaryPrompt._();
 
   /// Prompt version. Stored alongside summaries for traceability.
-  static const int version = 1;
+  static const int version = 2;
 
   /// Build the initial summary prompt for a raw transcript.
-  static String initial(String transcript) => '''Summarize this meeting transcript. Use the exact section headers shown below. Write plain sentences only.
+  static String initial(String transcript) => '''Summarize this meeting transcript. You MUST include ALL five section headers below, even if a section is empty. Write plain sentences only. Do not use markdown, bullets, or numbered lists.
 
 TLDR:
-(One or two sentences summarizing the meeting.)
+Write one or two sentences summarizing the entire meeting.
 
 KEY POINTS:
-(List the main points, one per line.)
+List each main topic discussed, one per line.
 
 DECISIONS:
-(List decisions made, one per line. Write None if there were none.)
+List each decision that was made, one per line. If no decisions were made, write "No decisions were made."
 
 ACTION ITEMS:
-(List tasks or follow-ups, one per line. Write None if there were none.)
+List each task, follow-up, or commitment someone made, one per line. Include who is responsible if mentioned. If no action items were identified, write "No action items were identified."
 
 OPEN QUESTIONS:
-(List unresolved questions, one per line. Write None if there were none.)
+List each unresolved question or topic that needs follow-up, one per line. If none, write "No open questions."
 
 Transcript:
 $transcript''';
