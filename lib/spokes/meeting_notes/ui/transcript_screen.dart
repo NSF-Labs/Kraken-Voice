@@ -49,12 +49,15 @@ class _TranscriptScreenState extends State<TranscriptScreen> with SingleTickerPr
   late final Animation<double> _pulseAnimation;
   bool _isActivelyTranscribing = false;
   Timer? _transcriptionPollTimer;
+  late DateTime _meetingDate;
+  bool _userManuallyRenamed = false;
 
   @override
   void initState() {
     super.initState();
     _folderRepo = FolderRepository(context.read<VaultService>());
     _currentTitle = widget.recording.title;
+    _meetingDate = widget.recording.meetingDate;
     
     _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))
       ..repeat(reverse: true);
@@ -180,8 +183,77 @@ class _TranscriptScreenState extends State<TranscriptScreen> with SingleTickerPr
     if (newName != null && newName.isNotEmpty && newName != _currentTitle) {
       await _folderRepo.renameRecording(widget.recording.id, newName);
       if (mounted) {
-        setState(() => _currentTitle = newName);
+        setState(() {
+          _currentTitle = newName;
+          _userManuallyRenamed = true;
+        });
       }
+    }
+  }
+
+  /// AI-suggested name (N1): generates a short descriptive title from the summary.
+  /// Only applies if user hasn't manually renamed and title is still the default.
+  void _generateAIName(String summaryJson) async {
+    // Skip if user already chose their own name
+    if (_userManuallyRenamed) return;
+    // Skip if title doesn't look like the auto-generated default (Recording M/D H:MM)
+    if (!_currentTitle.startsWith('Recording ')) return;
+
+    try {
+      final inference = context.read<LocalInferenceService>();
+      await inference.loadModel();
+
+      // Parse summary for naming context
+      String summaryContext = summaryJson;
+      try {
+        final parsed = jsonDecode(summaryJson) as Map<String, dynamic>;
+        final tldr = parsed['tldr'] ?? '';
+        final keyPoints = (parsed['key_points'] as List<dynamic>?)?.take(3).join(', ') ?? '';
+        summaryContext = '$tldr\nKey topics: $keyPoints';
+      } catch (_) {}
+
+      if (summaryContext.length > 500) {
+        summaryContext = summaryContext.substring(0, 500);
+      }
+
+      final prompt = '''You are naming a meeting recording. Based on this summary, produce a SHORT, specific title (3-8 words). Include key topic and context.
+
+Good examples: "Q2 Budget Review with Finance", "Sprint 14 Retro", "Client Onboarding - Acme Corp", "Weekly 1:1 with Sarah"
+Bad examples: "Meeting", "Recording 4/23", "Important Discussion", "Meeting about various topics"
+
+Summary:
+$summaryContext
+
+Title:''';
+
+      final buffer = StringBuffer();
+      await for (final token in inference.generateStream(prompt, maxTokens: 32)) {
+        buffer.write(token.text);
+      }
+
+      String suggestedName = buffer.toString().trim();
+      // Clean up: remove quotes, newlines, trailing periods
+      suggestedName = suggestedName
+          .replaceAll('"', '')
+          .replaceAll("'", '')
+          .replaceAll('\n', ' ')
+          .replaceAll(RegExp(r'\.$'), '')
+          .trim();
+
+      // Validate: must be 3-80 chars and not just generic garbage
+      if (suggestedName.length < 3 || suggestedName.length > 80) return;
+      if (suggestedName.toLowerCase() == 'meeting' || 
+          suggestedName.toLowerCase() == 'recording') return;
+
+      // Apply the AI name
+      await _folderRepo.renameRecording(widget.recording.id, suggestedName);
+      if (mounted) {
+        setState(() => _currentTitle = suggestedName);
+        debugPrint('[AI Name] Applied: "$suggestedName"');
+      }
+    } catch (e) {
+      debugPrint('[AI Name] Failed: $e');
+      // Non-fatal — recording keeps its default name
     }
   }
 
@@ -294,6 +366,8 @@ $transcript''';
             // Reload version history
             final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
             if (mounted) setState(() => _summaryVersions = versions);
+            // AI-suggested name (N1) — runs after summary is saved
+            _generateAIName(cleaned);
           }
         },
         onError: (e) {
@@ -602,7 +676,7 @@ $transcript''';
     final sb = StringBuffer();
     sb.writeln('# $_currentTitle');
     sb.writeln();
-    sb.writeln('**Date:** ${_formatDate(widget.recording.createdAt)}  ');
+    sb.writeln('**Date:** ${_formatDate(_meetingDate)}  ');
     sb.writeln('**Duration:** ${_formatPos(Duration(milliseconds: widget.recording.durationMs))}  ');
     sb.writeln();
 
@@ -686,6 +760,30 @@ $transcript''';
   String _formatDate(DateTime dt) {
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  Future<void> _showMeetingDatePicker() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _meetingDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: KrakenColors.accent,
+              surface: KrakenColors.surfaceElevated,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && mounted) {
+      setState(() => _meetingDate = picked);
+      await _folderRepo.setMeetingDate(widget.recording.id, picked);
+    }
   }
 
   void _showExportSheet() {
@@ -941,7 +1039,7 @@ $transcript''';
       final parsed = jsonDecode(raw) as Map<String, dynamic>;
       final sb = StringBuffer();
       sb.writeln('AI Summary: $_currentTitle');
-      sb.writeln('Date: ${_formatDate(widget.recording.createdAt)}');
+      sb.writeln('Date: ${_formatDate(_meetingDate)}');
       sb.writeln('Duration: ${_formatPos(Duration(milliseconds: widget.recording.durationMs))}');
       sb.writeln('${'=' * 50}\n');
 
@@ -1275,6 +1373,44 @@ $transcript''';
                                       decorationColor: KrakenColors.textMuted.withValues(alpha: 0.4),
                                     ),
                                   ),
+                                  const Spacer(),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    size: 14,
+                                    color: KrakenColors.textMuted.withValues(alpha: 0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Meeting date (tappable to edit)
+                            const SizedBox(height: KrakenSpacing.s2),
+                            GestureDetector(
+                              onTap: _showMeetingDatePicker,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 13,
+                                    color: KrakenColors.textMuted.withValues(alpha: 0.7),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Meeting: ${_formatDate(_meetingDate)}',
+                                    style: KrakenText.bodySm(color: KrakenColors.textMuted).copyWith(
+                                      fontSize: 11,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: KrakenColors.textMuted.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  if (_meetingDate.year != widget.recording.createdAt.year ||
+                                      _meetingDate.month != widget.recording.createdAt.month ||
+                                      _meetingDate.day != widget.recording.createdAt.day) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '(Recorded ${_formatDate(widget.recording.createdAt)})',
+                                      style: KrakenText.bodySm(color: KrakenColors.textMuted).copyWith(fontSize: 10),
+                                    ),
+                                  ],
                                   const Spacer(),
                                   Icon(
                                     Icons.chevron_right,

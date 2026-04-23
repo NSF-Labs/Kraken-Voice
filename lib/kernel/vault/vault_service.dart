@@ -21,7 +21,7 @@ class VaultService {
     _db = await openDatabase(
       dbPath,
       password: hexKey,
-      version: 10,
+      version: 11,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -120,6 +120,7 @@ class VaultService {
         audio_path TEXT NOT NULL,
         duration_ms INTEGER NOT NULL,
         created_at INTEGER NOT NULL,
+        meeting_date INTEGER,
         source TEXT,
         retention_policy TEXT NOT NULL DEFAULT '90_day',
         audio_deleted_at INTEGER,
@@ -264,6 +265,11 @@ class VaultService {
       await db.execute("ALTER TABLE recordings ADD COLUMN retention_policy TEXT NOT NULL DEFAULT '90_day'");
       await db.execute("ALTER TABLE recordings ADD COLUMN audio_deleted_at INTEGER");
       await db.execute("ALTER TABLE recordings ADD COLUMN audio_deleted_reason TEXT");
+    }
+    if (oldVersion < 11) {
+      await db.execute("ALTER TABLE recordings ADD COLUMN meeting_date INTEGER");
+      // Backfill: set meeting_date = created_at for existing recordings
+      await db.execute("UPDATE recordings SET meeting_date = created_at WHERE meeting_date IS NULL");
     }
   }
 

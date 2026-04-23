@@ -376,7 +376,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
     sb.writeln('# ${rec.title}');
     sb.writeln();
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    sb.writeln('**Date:** ${months[rec.createdAt.month - 1]} ${rec.createdAt.day}, ${rec.createdAt.year}  ');
+    sb.writeln('**Date:** ${months[rec.meetingDate.month - 1]} ${rec.meetingDate.day}, ${rec.meetingDate.year}  ');
     sb.writeln('**Duration:** ${_formatDuration(rec.durationMs)}  ');
     sb.writeln();
 

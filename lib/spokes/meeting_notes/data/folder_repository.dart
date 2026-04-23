@@ -35,6 +35,9 @@ class Recording {
   final int durationMs;
   final DateTime createdAt;
   final String? source;
+
+  // Meaningful date: user-editable, defaults to createdAt
+  final DateTime meetingDate;
   
   // Implicitly joined from transcription_jobs
   final String? transcriptionStatus;
@@ -53,21 +56,26 @@ class Recording {
     required this.audioPath,
     required this.durationMs,
     required this.createdAt,
+    DateTime? meetingDate,
     this.source,
     this.transcriptionStatus,
     this.retentionPolicy = '90_day',
     this.audioDeletedAt,
     this.audioDeletedReason,
-  });
+  }) : meetingDate = meetingDate ?? createdAt;
 
   factory Recording.fromMap(Map<String, dynamic> map) {
+    final createdAt = DateTime.fromMillisecondsSinceEpoch(map['created_at']);
     return Recording(
       id: map['id'],
       folderId: map['folder_id'],
       title: map['title'],
       audioPath: map['audio_path'],
       durationMs: map['duration_ms'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
+      createdAt: createdAt,
+      meetingDate: map['meeting_date'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['meeting_date'] as int)
+          : createdAt,
       source: map['source'],
       transcriptionStatus: map['status'],
       retentionPolicy: map['retention_policy'] as String? ?? '90_day',
@@ -223,6 +231,7 @@ class FolderRepository {
       'audio_path': rec.audioPath,
       'duration_ms': rec.durationMs,
       'created_at': rec.createdAt.millisecondsSinceEpoch,
+      'meeting_date': rec.meetingDate.millisecondsSinceEpoch,
       'source': rec.source,
     });
 
@@ -242,6 +251,16 @@ class FolderRepository {
     await _vault.db.update(
       'recordings',
       {'title': newTitle},
+      where: 'id = ?',
+      whereArgs: [recordingId],
+    );
+  }
+
+  /// Update the user-editable meeting date for a recording.
+  Future<void> setMeetingDate(String recordingId, DateTime date) async {
+    await _vault.db.update(
+      'recordings',
+      {'meeting_date': date.millisecondsSinceEpoch},
       where: 'id = ?',
       whereArgs: [recordingId],
     );

@@ -152,7 +152,7 @@ class KrakenExportService {
       } catch (_) {}
     }
 
-    final dateStr = _formatDate(recording.createdAt);
+    final dateStr = _formatDate(recording.meetingDate);
     final durationStr = _formatDuration(recording.durationMs);
 
     // ── Build pages ──
@@ -356,7 +356,7 @@ class KrakenExportService {
       } catch (_) {}
     }
 
-    final dateStr = _formatDate(recording.createdAt);
+    final dateStr = _formatDate(recording.meetingDate);
     final durationStr = _formatDuration(recording.durationMs);
 
     // Build document.xml content
