@@ -301,7 +301,21 @@ class MainActivity: FlutterFragmentActivity() {
         )
 
         // Setup Audio MethodChannel
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AUDIO_CHANNEL).setMethodCallHandler { call, result ->
+        val audioChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AUDIO_CHANNEL)
+        
+        // Wire notification callbacks from the service back to Flutter
+        KrakenRecordingService.onNotificationStop = {
+            Handler(Looper.getMainLooper()).post {
+                audioChannel.invokeMethod("onNotificationStop", null)
+            }
+        }
+        KrakenRecordingService.onNotificationPause = {
+            Handler(Looper.getMainLooper()).post {
+                audioChannel.invokeMethod("onNotificationPause", null)
+            }
+        }
+
+        audioChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startRecording" -> {
                     detectSilenceFlag = call.argument<Boolean>("detectSilence") ?: false

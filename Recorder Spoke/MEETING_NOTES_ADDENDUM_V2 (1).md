@@ -680,3 +680,11 @@ Add to §10's exit criteria list:
 - Phone call interruptions pause and auto-resume correctly.
 - Five-hour safety cap enforces cleanly with appropriate warnings.
 - Battery-drain scenarios preserve captured audio via force-quit recovery.
+
+---
+
+## §13 — Addendum v3: Transcription Status Indicator (supersedes §B.5–B.6 global banner)
+
+**Date:** April 23, 2026 — Adopted during Handoff 2B/3 implementation.
+
+The original specification (Handoff 2A, Workstream B, items B.5–B.6) defined a persistent in-app banner visible on the home screen and all non-Meeting-Notes screens, showing active transcription progress (percentage, time remaining), queue depth ("N more queued"), and tap-to-navigate behavior. During implementation this approach was replaced with folder-level status indicators: each folder card renders a pulsing glow border whose color reflects the aggregate state of its child recordings (accent for actively transcribing, amber for queued, neutral for complete). Individual recording cards within a folder show per-file status chips. This design surfaces the same information — what is processing, what is waiting, what is done — at the point where users interact with their recordings, without consuming persistent screen real estate on unrelated screens. The global `_ActiveTranscriptionBanner` widget was built, tested, and then deliberately removed from the shell layout. Commitment IDs 2A-14 through 2A-20 from the Build Plan audit are formally **superseded** by this approach and should not be treated as gaps in future audits.

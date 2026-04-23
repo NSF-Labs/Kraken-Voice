@@ -152,21 +152,55 @@ class _RecordingScreenState extends State<RecordingScreen> {
     }
   }
 
+  bool _batteryDisclosureShown = false;
+  final Set<int> _shownWarnings = {};
+
   void _checkLimits(Duration duration) {
     if (_audioEngine.recordingState.value != AudioRecordingState.recording) return;
+    final secs = duration.inSeconds;
 
-    if (duration.inSeconds == 5 * 3600) {
-      _stopRecording(limitReachedMsg: "Recording stopped at the 5-hour safety limit. You can start a new recording if needed.");
-      return;
-    } else if (duration.inSeconds == 5 * 3600 - 60) {
-      _showLimitModal("Recording will stop in 1 minute.");
+    // --- Battery disclosure at 30 minutes (H1-57, AV2 §12.5) ---
+    if (secs == 30 * 60 && !_batteryDisclosureShown) {
+      _batteryDisclosureShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Long recordings use more battery. Plugging in is recommended for sessions over an hour.'),
+          duration: Duration(seconds: 6),
+        ),
+      );
     }
 
+    // --- 5-hour safety cap (AV2 §12.4) ---
+    if (secs == 5 * 3600) {
+      _stopRecording(limitReachedMsg: "Recording stopped at the 5-hour safety limit. Your audio has been preserved.");
+      return;
+    } else if (secs == 4 * 3600 + 45 * 60 && !_shownWarnings.contains(secs)) {
+      // 4:45 — 15 minutes remaining
+      _shownWarnings.add(secs);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('15 minutes remaining before the 5-hour safety limit.')),
+      );
+    } else if (secs == 4 * 3600 + 55 * 60 && !_shownWarnings.contains(secs)) {
+      // 4:55 — 5 minutes remaining
+      _shownWarnings.add(secs);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('5 minutes remaining. Recording will stop at the 5-hour limit.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } else if (secs == 4 * 3600 + 59 * 60 && !_shownWarnings.contains(secs)) {
+      // 4:59 — 1 minute remaining (modal)
+      _shownWarnings.add(secs);
+      _showLimitModal("Recording will stop in 1 minute at the 5-hour safety limit. Your audio will be preserved.");
+    }
+
+    // --- Free-tier 20-minute limit (AV2 §2) ---
     if (!_isFreeTier) return;
 
-    if (duration.inSeconds == 20 * 60) {
-      _stopRecording(limitReachedMsg: "Recording stopped at the 20-minute free limit. You can review what was captured.");
-    } else if (duration.inSeconds == 19 * 60 + 45) {
+    if (secs == 20 * 60) {
+      _stopRecording(limitReachedMsg: "Recording stopped at the 20-minute free limit. Your audio has been preserved.");
+    } else if (secs == 19 * 60 + 45) {
       _showUpgradeModal();
     }
   }

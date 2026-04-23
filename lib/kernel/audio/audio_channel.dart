@@ -14,7 +14,33 @@ class AudioEngine {
   String? currentFilePath;
   Timer? _timer;
 
+  /// Callback invoked when the user taps Stop from the notification.
+  /// The RecordingScreen should listen to this and trigger its own stop flow.
+  VoidCallback? onNotificationStop;
+
+  /// Callback invoked when the user taps Pause/Resume from the notification.
+  VoidCallback? onNotificationPause;
+
   Stream<double>? _amplitudeStream;
+
+  AudioEngine() {
+    // Listen for notification-triggered actions from the native side
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onNotificationStop':
+          onNotificationStop?.call();
+          break;
+        case 'onNotificationPause':
+          if (recordingState.value == AudioRecordingState.paused) {
+            recordingState.value = AudioRecordingState.recording;
+          } else if (recordingState.value == AudioRecordingState.recording) {
+            recordingState.value = AudioRecordingState.paused;
+          }
+          onNotificationPause?.call();
+          break;
+      }
+    });
+  }
 
   Stream<double> get amplitudeStream {
     _amplitudeStream ??= _amplitudeEventChannel
