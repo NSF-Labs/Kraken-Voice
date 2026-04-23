@@ -306,6 +306,99 @@ Title:''';
     return false;
   }
 
+  /// Parses plain-text section output from the LLM into our summary JSON format.
+  /// Expects headers like "TLDR:", "KEY POINTS:", etc.
+  String? _parseSectionsToJson(String text) {
+    final cleaned = _cleanSummaryText(text);
+    
+    // First, try to parse as JSON directly (model may still produce JSON sometimes)
+    try {
+      final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
+      if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
+        // Clean all values
+        final sanitized = <String, dynamic>{};
+        for (final entry in parsed.entries) {
+          if (entry.value is String) {
+            sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+          } else if (entry.value is List) {
+            sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+          } else {
+            sanitized[entry.key] = entry.value;
+          }
+        }
+        return jsonEncode(sanitized);
+      }
+    } catch (_) {}
+
+    // Also try extracting JSON from mixed text
+    final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(cleaned);
+    if (jsonMatch != null) {
+      try {
+        final parsed = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
+        if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
+          final sanitized = <String, dynamic>{};
+          for (final entry in parsed.entries) {
+            if (entry.value is String) {
+              sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+            } else if (entry.value is List) {
+              sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+            } else {
+              sanitized[entry.key] = entry.value;
+            }
+          }
+          return jsonEncode(sanitized);
+        }
+      } catch (_) {}
+    }
+
+    // Parse plain-text section format
+    String _extractSection(String text, String header, List<String> nextHeaders) {
+      final headerPattern = RegExp(RegExp.escape(header), caseSensitive: false);
+      final match = headerPattern.firstMatch(text);
+      if (match == null) return '';
+      
+      int start = match.end;
+      int end = text.length;
+      for (final next in nextHeaders) {
+        final nextMatch = RegExp(RegExp.escape(next), caseSensitive: false).firstMatch(text.substring(start));
+        if (nextMatch != null) {
+          end = start + nextMatch.start;
+          break;
+        }
+      }
+      return text.substring(start, end).trim();
+    }
+
+    List<String> _splitLines(String section) {
+      return section
+          .split('\n')
+          .map((l) => l.replaceAll(RegExp(r'^[\s\-\*\d\.]+'), '').trim())
+          .where((l) => l.isNotEmpty && l.toLowerCase() != 'none' && l.toLowerCase() != 'n/a')
+          .map((l) => _cleanSummaryText(l))
+          .toList();
+    }
+
+    final headers = ['TLDR:', 'KEY POINTS:', 'DECISIONS:', 'ACTION ITEMS:', 'OPEN QUESTIONS:'];
+    
+    final tldr = _extractSection(text, 'TLDR:', headers.sublist(1));
+    final keyPoints = _extractSection(text, 'KEY POINTS:', headers.sublist(2));
+    final decisions = _extractSection(text, 'DECISIONS:', headers.sublist(3));
+    final actionItems = _extractSection(text, 'ACTION ITEMS:', headers.sublist(4));
+    final openQuestions = _extractSection(text, 'OPEN QUESTIONS:', []);
+
+    // Must have at least a TLDR to be considered valid
+    if (tldr.isEmpty && keyPoints.isEmpty) return null;
+
+    final result = {
+      'tldr': _cleanSummaryText(tldr.replaceAll('\n', ' ').trim()),
+      'key_points': _splitLines(keyPoints),
+      'decisions': _splitLines(decisions),
+      'action_items': _splitLines(actionItems),
+      'open_questions': _splitLines(openQuestions),
+    };
+    return jsonEncode(result);
+  }
+
   Future<void> _generateSummary({int attempt = 1}) async {
     // Gate on model availability — show download prompt if missing
     if (attempt == 1 && !await _checkModelAvailable()) return;
@@ -315,32 +408,33 @@ Title:''';
       _streamingSummary = "";
     });
 
-    // Truncate transcript to keep prompt within context window.
-    // ~2000 chars is plenty for the model to extract key points.
-    // Shorter input = more room for output tokens.
+    // Keep transcript short — model only needs the gist.
+    // Shorter input = faster inference, less memory pressure, fewer crashes.
     String transcript = _transcriptText ?? '';
-    if (transcript.length > 2000) {
-      transcript = '${transcript.substring(0, 2000)}\n\n[...transcript continues...]';
+    if (transcript.length > 1500) {
+      transcript = '${transcript.substring(0, 1500)}\n\n[transcript continues]';
     }
 
-    // Generous token budget — summary JSON can be verbose
-    const int maxTokens = 2048;
+    // Conservative token budget — prevent OOM crashes on device
+    const int maxTokens = 1024;
 
-    final prompt = '''You are a professional meeting assistant. Summarize the transcript below.
+    // Plain-text prompt: much more reliable than JSON for small on-device models.
+    final prompt = '''Summarize this meeting transcript. Use the exact section headers shown below. Write plain sentences only.
 
-You must return ONLY a JSON object. Do not include any explanation, commentary, or formatting outside the JSON.
+TLDR:
+(One or two sentences summarizing the meeting.)
 
-Use this exact structure:
-{"tldr": "...", "key_points": ["..."], "decisions": ["..."], "action_items": ["..."], "open_questions": ["..."]}
+KEY POINTS:
+(List the main points, one per line.)
 
-Rules for writing the values:
-- Write in plain conversational English, as if speaking to a colleague.
-- Never use programming syntax: no backslashes, no escape sequences, no \\n, no \\t, no \\".
-- Never use markdown: no **, no `, no ```, no #, no bullet characters.
-- Never use HTML tags or any markup language.
-- Use normal punctuation: periods, commas, question marks.
-- If a category has no items, use an empty array [].
-- Keep each bullet to one clear sentence.
+DECISIONS:
+(List decisions made, one per line. Write None if there were none.)
+
+ACTION ITEMS:
+(List tasks or follow-ups, one per line. Write None if there were none.)
+
+OPEN QUESTIONS:
+(List unresolved questions, one per line. Write None if there were none.)
 
 Transcript:
 $transcript''';
@@ -357,74 +451,35 @@ $transcript''';
         },
         onDone: () async {
           if (mounted) {
-            // Post-process: strip markdown code fences, extract JSON, and clean values
-            String cleaned = _streamingSummary.trim();
-            debugPrint('[Kraken AI] Raw output (${cleaned.length} chars, attempt $attempt): ${cleaned.substring(0, cleaned.length.clamp(0, 300))}...');
-            // Strip code fences
-            if (cleaned.startsWith('```')) {
-              final lines = cleaned.split('\n');
-              if (lines.length > 2) {
-                cleaned = lines.sublist(1, lines.length - (lines.last.trim().startsWith('```') ? 1 : 0)).join('\n').trim();
-              }
-            }
-            // Extract JSON object if surrounded by text
-            final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(cleaned);
-            if (jsonMatch != null) {
-              cleaned = jsonMatch.group(0)!;
-            }
-            // Deep-clean: parse JSON, sanitize each value, re-encode
-            bool isValidJson = false;
-            try {
-              final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-              // Validate required structure — must have at least 'tldr' or 'summary' key
-              if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
-                final sanitized = <String, dynamic>{};
-                for (final entry in parsed.entries) {
-                  if (entry.value is String) {
-                    sanitized[entry.key] = _cleanSummaryText(entry.value as String);
-                  } else if (entry.value is List) {
-                    sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
-                  } else {
-                    sanitized[entry.key] = entry.value;
-                  }
-                }
-                cleaned = jsonEncode(sanitized);
-                isValidJson = true;
-                debugPrint('[Kraken AI] Valid JSON produced on attempt $attempt');
-              } else {
-                debugPrint('[Kraken AI] JSON parsed but missing required keys: ${parsed.keys.toList()}');
-              }
-            } catch (e) {
-              debugPrint('[Kraken AI] JSON parse failed on attempt $attempt: $e');
-              debugPrint('[Kraken AI] Cleaned text was: ${cleaned.substring(0, cleaned.length.clamp(0, 500))}');
-            }
+            debugPrint('[Kraken AI] Raw output (${_streamingSummary.length} chars, attempt $attempt)');
+            
+            // Parse the plain-text sections into JSON
+            final jsonResult = _parseSectionsToJson(_streamingSummary);
 
-            if (isValidJson) {
+            if (jsonResult != null) {
+              debugPrint('[Kraken AI] Successfully parsed summary on attempt $attempt');
               setState(() {
-                _summaryJson = cleaned;
+                _summaryJson = jsonResult;
                 _isGeneratingSummary = false;
                 _viewingVersionIndex = -1;
               });
-              await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
-              // Sync action items from new summary
-              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
-              // Reload version history
+              await _folderRepo.saveSummaryJson(widget.recording.audioPath, jsonResult);
+              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, jsonResult);
               final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
               if (mounted) setState(() => _summaryVersions = versions);
-              // AI-suggested name (N1) — runs after summary is saved
-              _generateAIName(cleaned);
+              _generateAIName(jsonResult);
             } else if (attempt < 2) {
-              // Auto-retry once with higher token budget
+              debugPrint('[Kraken AI] Parse failed on attempt $attempt, retrying...');
               _generateSummary(attempt: attempt + 1);
             } else {
-              // Both attempts failed — show error, don't persist garbage
+              debugPrint('[Kraken AI] Both attempts failed. Raw: ${_streamingSummary.substring(0, _streamingSummary.length.clamp(0, 300))}');
               setState(() {
                 _isGeneratingSummary = false;
                 _streamingSummary = '';
               });
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Summary generation produced invalid output. Please try again.')),
+                  const SnackBar(content: Text('Summary generation failed. Please try again.')),
                 );
               }
             }
@@ -444,6 +499,8 @@ $transcript''';
       }
     }
   }
+
+
 
   Future<void> _showRefineDialog() async {
     final controller = TextEditingController();
@@ -489,7 +546,6 @@ $transcript''';
   }
 
   Future<void> _refineSummary(String instruction) async {
-    // Gate on model availability
     if (!await _checkModelAvailable()) return;
 
     setState(() {
@@ -498,30 +554,33 @@ $transcript''';
     });
 
     String transcript = _transcriptText ?? '';
-    if (transcript.length > 3000) {
-      transcript = '${transcript.substring(0, 3000)}\n\n[...transcript truncated...]';
+    if (transcript.length > 1500) {
+      transcript = '${transcript.substring(0, 1500)}\n\n[transcript continues]';
     }
 
     final existingSummary = _summaryJson ?? '';
 
-    final prompt = '''You previously summarized a meeting transcript and produced this summary:
+    final prompt = '''You previously summarized a meeting. Here is your previous summary:
 $existingSummary
 
 The user wants you to refine it with this instruction: "$instruction"
 
-Return ONLY a JSON object with the refined summary. No explanation, no commentary outside the JSON.
+Write the refined summary using these exact section headers. Write plain sentences only.
 
-Use this exact structure:
-{"tldr": "...", "key_points": ["..."], "decisions": ["..."], "action_items": ["..."], "open_questions": ["..."]}
+TLDR:
+(One or two sentences summarizing the meeting.)
 
-Rules for writing the values:
-- Write in plain conversational English, as if speaking to a colleague.
-- Never use programming syntax: no backslashes, no escape sequences, no \n, no \t.
-- Never use markdown: no **, no `, no ```, no #, no bullet characters.
-- Never use HTML tags or any markup language.
-- Use normal punctuation only.
-- If a category has no items, use an empty array [].
-- Keep each bullet to one clear sentence.
+KEY POINTS:
+(List the main points, one per line.)
+
+DECISIONS:
+(List decisions made, one per line. Write None if there were none.)
+
+ACTION ITEMS:
+(List tasks or follow-ups, one per line. Write None if there were none.)
+
+OPEN QUESTIONS:
+(List unresolved questions, one per line. Write None if there were none.)
 
 Original transcript for reference:
 $transcript''';
@@ -538,48 +597,15 @@ $transcript''';
         },
         onDone: () async {
           if (mounted) {
-            String cleaned = _streamingSummary.trim();
-            // Strip code fences
-            if (cleaned.startsWith('```')) {
-              final lines = cleaned.split('\n');
-              if (lines.length > 2) {
-                cleaned = lines.sublist(1, lines.length - (lines.last.trim().startsWith('```') ? 1 : 0)).join('\n').trim();
-              }
-            }
-            // Extract JSON object if surrounded by text
-            final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(cleaned);
-            if (jsonMatch != null) {
-              cleaned = jsonMatch.group(0)!;
-            }
-            // Deep-clean: parse JSON, sanitize each value, re-encode
-            bool isValidJson = false;
-            try {
-              final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-              if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
-                final sanitized = <String, dynamic>{};
-                for (final entry in parsed.entries) {
-                  if (entry.value is String) {
-                    sanitized[entry.key] = _cleanSummaryText(entry.value as String);
-                  } else if (entry.value is List) {
-                    sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
-                  } else {
-                    sanitized[entry.key] = entry.value;
-                  }
-                }
-                cleaned = jsonEncode(sanitized);
-                isValidJson = true;
-              }
-            } catch (_) {}
-
-            if (isValidJson) {
+            final jsonResult = _parseSectionsToJson(_streamingSummary);
+            if (jsonResult != null) {
               setState(() {
-                _summaryJson = cleaned;
+                _summaryJson = jsonResult;
                 _isGeneratingSummary = false;
                 _viewingVersionIndex = -1;
               });
-              await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
-              // Sync action items from refined summary
-              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
+              await _folderRepo.saveSummaryJson(widget.recording.audioPath, jsonResult);
+              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, jsonResult);
               final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
               if (mounted) setState(() => _summaryVersions = versions);
             } else {
@@ -609,6 +635,7 @@ $transcript''';
       }
     }
   }
+
 
   /// Strips code-like artifacts that small LLMs sometimes leak into summary text.
   String _cleanSummaryText(String text) {
