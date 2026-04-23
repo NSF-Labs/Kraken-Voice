@@ -306,9 +306,9 @@ Title:''';
     return false;
   }
 
-  Future<void> _generateSummary() async {
+  Future<void> _generateSummary({int attempt = 1}) async {
     // Gate on model availability — show download prompt if missing
-    if (!await _checkModelAvailable()) return;
+    if (attempt == 1 && !await _checkModelAvailable()) return;
 
     setState(() {
       _isGeneratingSummary = true;
@@ -321,6 +321,12 @@ Title:''';
       transcript = '${transcript.substring(0, 3000)}\n\n[...transcript truncated for summarization...]';
     }
 
+    // Adaptive token budget: longer transcripts need more room for the summary JSON
+    // Attempt 2 gets a generous bump to handle edge cases
+    final int maxTokens = attempt > 1
+        ? 2048
+        : transcript.length > 2000 ? 1536 : 1024;
+
     final prompt = '''You are a professional meeting assistant. Summarize the transcript below.
 
 You must return ONLY a JSON object. Do not include any explanation, commentary, or formatting outside the JSON.
@@ -330,7 +336,7 @@ Use this exact structure:
 
 Rules for writing the values:
 - Write in plain conversational English, as if speaking to a colleague.
-- Never use programming syntax: no backslashes, no escape sequences, no \n, no \t, no \".
+- Never use programming syntax: no backslashes, no escape sequences, no \\n, no \\t, no \\".
 - Never use markdown: no **, no `, no ```, no #, no bullet characters.
 - Never use HTML tags or any markup language.
 - Use normal punctuation: periods, commas, question marks.
@@ -345,7 +351,7 @@ $transcript''';
     try {
       await inference.loadModel();
       
-      final stream = inference.generateStream(prompt, maxTokens: 1024);
+      final stream = inference.generateStream(prompt, maxTokens: maxTokens);
       stream.listen(
         (token) {
           if (mounted) setState(() => _streamingSummary += token.text);
@@ -403,8 +409,11 @@ $transcript''';
               if (mounted) setState(() => _summaryVersions = versions);
               // AI-suggested name (N1) — runs after summary is saved
               _generateAIName(cleaned);
+            } else if (attempt < 2) {
+              // Auto-retry once with higher token budget
+              _generateSummary(attempt: attempt + 1);
             } else {
-              // Invalid output — do NOT persist, show error, let user retry
+              // Both attempts failed — show error, don't persist garbage
               setState(() {
                 _isGeneratingSummary = false;
                 _streamingSummary = '';
