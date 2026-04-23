@@ -29,6 +29,9 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
   String _defaultRetentionPolicy = '90_day';
   int _storageCap = RetentionService.maxStorageBytes;
 
+  // 2A-29: Transcription preference
+  String _transcriptionPref = 'auto'; // auto, ask, manual
+
   final _headerController = TextEditingController();
   final _footerController = TextEditingController();
 
@@ -61,10 +64,12 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
   Future<void> _loadRetentionSettings() async {
     final policy = await _prefs.getString('default_retention_policy') ?? '90_day';
     final cap = await _prefs.getInt('storage_cap_bytes') ?? RetentionService.maxStorageBytes;
+    final txPref = await _prefs.getString('transcription_preference', defaultValue: 'auto');
     if (mounted) {
       setState(() {
         _defaultRetentionPolicy = policy;
         _storageCap = cap;
+        _transcriptionPref = txPref;
       });
     }
   }
@@ -120,6 +125,8 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
         padding: const EdgeInsets.all(KrakenSpacing.s4),
         children: [
           _buildStorageSection(),
+          const SizedBox(height: KrakenSpacing.s6),
+          _buildTranscriptionSection(),
           const SizedBox(height: KrakenSpacing.s6),
           _buildBrandedExportsSection(),
         ],
@@ -253,6 +260,67 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
       onTap: () async {
         setState(() => _defaultRetentionPolicy = value);
         await _prefs.setString('default_retention_policy', value);
+      },
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+    );
+  }
+
+  // ─── Transcription Preferences ────────────────────────────────────────────
+
+  // 2A-29: Settings toggle for transcription behavior
+  Widget _buildTranscriptionSection() {
+    return Card(
+      color: KrakenColors.surfaceElevated,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KrakenRadius.lg)),
+      child: Padding(
+        padding: const EdgeInsets.all(KrakenSpacing.s4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Transcription', style: KrakenText.bodyLg()),
+            const SizedBox(height: KrakenSpacing.s1),
+            Text(
+              'Choose when recordings are transcribed.',
+              style: KrakenText.bodySm(color: KrakenColors.textMuted),
+            ),
+            const SizedBox(height: KrakenSpacing.s3),
+            _transcriptionOption(
+              'auto',
+              'Automatic',
+              'Transcribe immediately after recording stops',
+              Icons.play_circle_outline,
+            ),
+            _transcriptionOption(
+              'ask',
+              'Ask me',
+              'Prompt after each recording to transcribe now or later',
+              Icons.help_outline,
+            ),
+            _transcriptionOption(
+              'manual',
+              'Manual',
+              'Only transcribe when I choose to from the recording list',
+              Icons.touch_app,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _transcriptionOption(String value, String title, String subtitle, IconData icon) {
+    final selected = _transcriptionPref == value;
+    return ListTile(
+      leading: Icon(icon, color: selected ? KrakenColors.accent : KrakenColors.textMuted, size: 22),
+      title: Text(title, style: KrakenText.bodyMd(color: selected ? KrakenColors.accent : KrakenColors.textPrimary)),
+      subtitle: Text(subtitle, style: KrakenText.bodySm(color: KrakenColors.textMuted)),
+      trailing: selected
+          ? const Icon(Icons.check_circle, color: KrakenColors.accent, size: 22)
+          : null,
+      onTap: () async {
+        setState(() => _transcriptionPref = value);
+        await _prefs.setString('transcription_preference', value);
       },
       contentPadding: EdgeInsets.zero,
       dense: true,

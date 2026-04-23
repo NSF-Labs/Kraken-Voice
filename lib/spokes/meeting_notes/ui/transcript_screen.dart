@@ -14,6 +14,7 @@ import 'package:kraken_hub/shell/design/tokens.dart';
 import 'package:kraken_hub/shell/inference/model_manager.dart';
 import '../data/folder_repository.dart';
 import '../data/kraken_export_service.dart';
+import '../data/summary_prompt.dart';
 
 class TranscriptScreen extends StatefulWidget {
   final Recording recording;
@@ -418,26 +419,8 @@ Title:''';
     // Conservative token budget — prevent OOM crashes on device
     const int maxTokens = 1024;
 
-    // Plain-text prompt: much more reliable than JSON for small on-device models.
-    final prompt = '''Summarize this meeting transcript. Use the exact section headers shown below. Write plain sentences only.
-
-TLDR:
-(One or two sentences summarizing the meeting.)
-
-KEY POINTS:
-(List the main points, one per line.)
-
-DECISIONS:
-(List decisions made, one per line. Write None if there were none.)
-
-ACTION ITEMS:
-(List tasks or follow-ups, one per line. Write None if there were none.)
-
-OPEN QUESTIONS:
-(List unresolved questions, one per line. Write None if there were none.)
-
-Transcript:
-$transcript''';
+    // 2B-31: Centralized, versioned prompt template
+    final prompt = SummaryPrompt.initial(transcript);
 
     final inference = context.read<LocalInferenceService>();
 
@@ -560,30 +543,12 @@ $transcript''';
 
     final existingSummary = _summaryJson ?? '';
 
-    final prompt = '''You previously summarized a meeting. Here is your previous summary:
-$existingSummary
-
-The user wants you to refine it with this instruction: "$instruction"
-
-Write the refined summary using these exact section headers. Write plain sentences only.
-
-TLDR:
-(One or two sentences summarizing the meeting.)
-
-KEY POINTS:
-(List the main points, one per line.)
-
-DECISIONS:
-(List decisions made, one per line. Write None if there were none.)
-
-ACTION ITEMS:
-(List tasks or follow-ups, one per line. Write None if there were none.)
-
-OPEN QUESTIONS:
-(List unresolved questions, one per line. Write None if there were none.)
-
-Original transcript for reference:
-$transcript''';
+    // 2B-31: Centralized, versioned prompt template
+    final prompt = SummaryPrompt.refine(
+      existingSummary: existingSummary,
+      instruction: instruction,
+      transcript: transcript,
+    );
 
     final inference = context.read<LocalInferenceService>();
 
