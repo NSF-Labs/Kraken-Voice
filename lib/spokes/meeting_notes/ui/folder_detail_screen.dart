@@ -9,6 +9,7 @@ import 'package:kraken_hub/kernel/kernel.dart';
 import 'package:kraken_hub/kernel/audio/transcription_engine.dart';
 import 'package:kraken_hub/shell/design/tokens.dart';
 import '../data/folder_repository.dart';
+import 'recording_state_chip.dart';
 import 'transcript_screen.dart';
 
 class FolderDetailScreen extends StatefulWidget {
@@ -711,10 +712,15 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
                       itemBuilder: (context, index) {
                         final rec = _recordings[index];
                         final hasNoJob = rec.transcriptionStatus == null;
-                        final statusLabel = hasNoJob ? 'Not transcribed' : rec.transcriptionStatus!;
                         final isProcessing = rec.transcriptionStatus == 'pending' || rec.transcriptionStatus == 'processing';
                         final isSelected = _selectedIds.contains(rec.id);
                         final progress = progressMap[rec.audioPath];
+
+                        // 2A-30, 2A-33: Full 6-state lifecycle label
+                        final recState = RecordingState.resolve(
+                          transcriptionStatus: rec.transcriptionStatus,
+                          hasSummary: _summaryPreviews.containsKey(rec.id),
+                        );
 
                         return AnimatedBuilder(
                           animation: _glowAnimation,
@@ -782,9 +788,21 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${_formatDuration(rec.durationMs)} • $statusLabel',
-                                        style: KrakenText.bodySm(color: isProcessing ? KrakenColors.accent : KrakenColors.textMuted),
+                                        _formatDuration(rec.durationMs),
+                                        style: KrakenText.bodySm(color: KrakenColors.textMuted),
                                       ),
+                                      const SizedBox(height: 3),
+                                      // 2A-30: Status chip
+                                      RecordingStateChip(state: recState, progress: progress),
+                                      // 2B-39, 2B-40: Sublabel guidance
+                                      if (recState.sublabel != null && recState != RecordingState.transcribing)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            recState.sublabel!,
+                                            style: KrakenText.bodySm(color: KrakenColors.textMuted).copyWith(fontSize: 10, fontStyle: FontStyle.italic),
+                                          ),
+                                        ),
                                       if (rec.isAudioDeleted) ...[
                                         const SizedBox(height: 2),
                                         Row(
