@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:kraken_hub/kernel/kernel.dart';
 import 'package:kraken_hub/shell/design/tokens.dart';
 
@@ -316,21 +317,29 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
   }
 
   Future<void> _pickLogo() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400);
-    if (picked == null) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400);
+      if (picked == null) return;
 
-    // Copy to app's internal directory for persistence
-    final appDir = await Directory('${(await Directory.systemTemp.parent.path)}').parent;
-    final internalDir = Directory('${appDir.path}/brand');
-    if (!await internalDir.exists()) await internalDir.create(recursive: true);
+      // Copy to app's persistent internal directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final brandDir = Directory('${appDir.path}/brand');
+      if (!await brandDir.exists()) await brandDir.create(recursive: true);
 
-    final ext = picked.path.split('.').last.toLowerCase();
-    final destPath = '${internalDir.path}/brand_logo.$ext';
-    await File(picked.path).copy(destPath);
+      final ext = picked.path.split('.').last.toLowerCase();
+      final destPath = '${brandDir.path}/brand_logo.$ext';
+      await File(picked.path).copy(destPath);
 
-    await _prefs.setBrandLogoPath(destPath);
-    setState(() => _logoPath = destPath);
+      await _prefs.setBrandLogoPath(destPath);
+      if (mounted) setState(() => _logoPath = destPath);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to set logo: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _removeLogo() async {
