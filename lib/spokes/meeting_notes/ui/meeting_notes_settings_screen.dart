@@ -53,6 +53,8 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
   }
 
   Future<void> _loadBrandSettings() async {
+    // Wait for entitlement data to finish loading (dev overrides, etc.)
+    await _entitlementService.ready;
     _isPaidTier = _entitlementService.isUnlocked('com.kraken.meeting_notes');
     final logo = await _prefs.getBrandLogoPath();
     final header = await _prefs.getBrandHeaderText();

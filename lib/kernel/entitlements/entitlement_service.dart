@@ -24,18 +24,24 @@ abstract class EntitlementService {
   EntitlementTier currentTier(String spokeId);
   Stream<EntitlementChangeEvent> get changes;
   Future<void> syncFromPlatform();
+  /// Completes when initial entitlement data (including dev overrides) is loaded.
+  Future<void> get ready;
 }
 
 class EntitlementServiceImpl implements EntitlementService {
   final _changesController = StreamController<EntitlementChangeEvent>.broadcast();
   final Map<String, EntitlementTier> _spokeTiers = {};
+  late final Future<void> _readyFuture;
   
   // Platform channel for native StoreKit / Play Billing
   static const MethodChannel _channel = MethodChannel('kraken.kernel/entitlement');
 
   EntitlementServiceImpl() {
-    _loadDevEntitlements();
+    _readyFuture = _loadDevEntitlements();
   }
+
+  @override
+  Future<void> get ready => _readyFuture;
 
   @override
   Stream<EntitlementChangeEvent> get changes => _changesController.stream;

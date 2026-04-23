@@ -499,26 +499,36 @@ class _SpokeCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                // FREE badge
+                // Tier badge
                 Positioned(
                   top: 0,
                   right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: KrakenColors.border),
-                      borderRadius: BorderRadius.circular(KrakenRadius.sm),
-                    ),
-                    child: Text(
-                      'FREE',
-                      style: KrakenText.label().copyWith(
-                        fontSize: 10,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final entitlements = RepositoryProvider.of<EntitlementService>(context, listen: false);
+                      final isPro = entitlements.isUnlocked(spoke.spokeId);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isPro ? KrakenColors.accent.withAlpha(25) : Colors.transparent,
+                          border: Border.all(
+                            color: isPro ? KrakenColors.accent : KrakenColors.border,
+                          ),
+                          borderRadius: BorderRadius.circular(KrakenRadius.sm),
+                        ),
+                        child: Text(
+                          isPro ? 'PRO' : 'FREE',
+                          style: KrakenText.label().copyWith(
+                            fontSize: 10,
+                            letterSpacing: 0.3,
+                            color: isPro ? KrakenColors.accent : null,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
