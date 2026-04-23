@@ -871,9 +871,12 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
                                           children: [
                                             const Icon(Icons.audio_file, size: 12, color: Colors.orangeAccent),
                                             const SizedBox(width: 4),
-                                            Text(
-                                              _retentionMicrocopy(rec),
-                                              style: KrakenText.bodySm(color: Colors.orangeAccent).copyWith(fontSize: 10),
+                                            Expanded(
+                                              child: Text(
+                                                _retentionMicrocopy(rec),
+                                                style: KrakenText.bodySm(color: Colors.orangeAccent).copyWith(fontSize: 10),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -891,12 +894,15 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> with SingleTick
                                                 color: KrakenColors.textMuted.withValues(alpha: 0.7),
                                               ),
                                               const SizedBox(width: 4),
-                                              Text(
-                                                _retentionPolicyLabel(rec.retentionPolicy),
-                                                style: KrakenText.bodySm(color: KrakenColors.textMuted).copyWith(
-                                                  fontSize: 10,
-                                                  decoration: TextDecoration.underline,
-                                                  decorationColor: KrakenColors.textMuted.withValues(alpha: 0.4),
+                                              Flexible(
+                                                child: Text(
+                                                  _retentionPolicyLabel(rec.retentionPolicy),
+                                                  style: KrakenText.bodySm(color: KrakenColors.textMuted).copyWith(
+                                                    fontSize: 10,
+                                                    decoration: TextDecoration.underline,
+                                                    decorationColor: KrakenColors.textMuted.withValues(alpha: 0.4),
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],

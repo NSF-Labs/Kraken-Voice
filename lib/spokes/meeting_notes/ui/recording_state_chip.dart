@@ -114,14 +114,18 @@ class RecordingStateChip extends StatelessWidget {
         children: [
           Icon(state.icon, size: 12, color: state.color),
           const SizedBox(width: 4),
-          Text(
-            state == RecordingState.transcribing && progress != null
-                ? '${state.label} — ${(progress! * 100).toInt()}%'
-                : state.label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: state.color,
+          Flexible(
+            child: Text(
+              state == RecordingState.transcribing && progress != null
+                  ? '${state.label} — ${(progress! * 100).toInt()}%'
+                  : state.label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: state.color,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
