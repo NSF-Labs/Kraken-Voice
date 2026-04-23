@@ -37,6 +37,8 @@ class LocalInferenceService {
     return '${directory.path}/gemma4.litertlm';
   }
 
+  bool _isWarmedUp = false;
+
   /// Loads the model into memory.
   Future<void> loadModel({String? modelPath}) async {
     final path = modelPath ?? await _resolveModelPath();
@@ -47,10 +49,26 @@ class LocalInferenceService {
     }
   }
 
+  /// Warm up the model with a trivial inference to initialize GPU context
+  /// and attention caches. Call after loadModel() and before real inference.
+  /// No-ops if already warmed up for this model load.
+  Future<void> warmUp() async {
+    if (_isWarmedUp) return;
+    try {
+      // Short prompt, minimal tokens — just enough to prime the pipeline
+      final stream = generateStream('Hi', maxTokens: 8);
+      await stream.drain(); // Discard all output
+      _isWarmedUp = true;
+    } catch (_) {
+      // Warm-up failure is non-fatal — real inference may still work
+    }
+  }
+
   /// Unloads the model to free up RAM.
   Future<void> unloadModel() async {
     try {
       await _channel.invokeMethod('unloadModel');
+      _isWarmedUp = false;
     } on PlatformException catch (e) {
       throw Exception('Failed to unload model: ${e.message}');
     }

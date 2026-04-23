@@ -353,15 +353,23 @@ Title:''';
     }
 
     // Parse plain-text section format
+    // Build flexible regex for a header — handles optional colon, markdown bold, etc.
+    String _flexHeader(String header) {
+      // Strip trailing colon for the base name, e.g. "TLDR:" -> "TLDR"
+      final base = header.replaceAll(':', '').trim();
+      // Match optional markdown bold (**), the header text, optional colon, case-insensitive
+      return r'(?:\*{0,2})' + RegExp.escape(base) + r'(?:\*{0,2})\s*:?';
+    }
+
     String _extractSection(String text, String header, List<String> nextHeaders) {
-      final headerPattern = RegExp(RegExp.escape(header), caseSensitive: false);
+      final headerPattern = RegExp(_flexHeader(header), caseSensitive: false);
       final match = headerPattern.firstMatch(text);
       if (match == null) return '';
       
       int start = match.end;
       int end = text.length;
       for (final next in nextHeaders) {
-        final nextMatch = RegExp(RegExp.escape(next), caseSensitive: false).firstMatch(text.substring(start));
+        final nextMatch = RegExp(_flexHeader(next), caseSensitive: false).firstMatch(text.substring(start));
         if (nextMatch != null) {
           end = start + nextMatch.start;
           break;
@@ -426,6 +434,8 @@ Title:''';
 
     try {
       await inference.loadModel();
+      // Warm up the model to avoid garbled first-inference output
+      await inference.warmUp();
       
       final stream = inference.generateStream(prompt, maxTokens: maxTokens);
       stream.listen(
@@ -453,6 +463,8 @@ Title:''';
               _generateAIName(jsonResult);
             } else if (attempt < 2) {
               debugPrint('[Kraken AI] Parse failed on attempt $attempt, retrying...');
+              // Clear garbled output before retrying so user doesn't see it
+              setState(() => _streamingSummary = '');
               _generateSummary(attempt: attempt + 1);
             } else {
               debugPrint('[Kraken AI] Both attempts failed. Raw: ${_streamingSummary.substring(0, _streamingSummary.length.clamp(0, 300))}');
