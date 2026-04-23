@@ -113,7 +113,7 @@ class KrakenRecordingService : Service() {
         recordingStartTimeMs = System.currentTimeMillis()
         pausedDurationMs = 0L
 
-        startForeground(NOTIFICATION_ID, createNotification("Recording…", Duration.ZERO))
+        startForeground(NOTIFICATION_ID, createNotification("Recording…", java.time.Duration.ZERO))
         startAmplitudePolling()
         startNotificationUpdater()
         registerPhoneCallListener()
