@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -72,9 +73,26 @@ class _RecordingScreenState extends State<RecordingScreen> {
       if (mounted) {
         setState(() {
           _waveformLevels.removeAt(0);
-          final rawScaled = ((amplitude / 32767.0) * 5.0).clamp(0.0, 1.0);
-          _smoothedAmplitude = (_smoothedAmplitude * 0.5) + (rawScaled * 0.5);
-          _waveformLevels.add(_audioEngine.recordingState.value == AudioRecordingState.recording ? _smoothedAmplitude : 0.0);
+
+          // H1-10: dBFS calibration — -30 dBFS floor, -3 dBFS ceiling
+          // amplitude from MediaRecorder is 0..32767 (linear)
+          double dbfs = -60.0; // floor for silence
+          if (amplitude > 0) {
+            dbfs = 20.0 * (log(amplitude / 32767.0) / ln10);
+          }
+          // Map -30 dBFS .. -3 dBFS → 0.0 .. 1.0
+          final scaled = ((dbfs + 30.0) / 27.0).clamp(0.0, 1.0);
+
+          // H1-12: Asymmetric smoothing — attack ~10ms, release ~100ms
+          // At 30Hz poll rate (33ms interval): attack α ≈ 0.97, release α ≈ 0.28
+          final alpha = scaled > _smoothedAmplitude ? 0.97 : 0.28;
+          _smoothedAmplitude = (_smoothedAmplitude * (1.0 - alpha)) + (scaled * alpha);
+
+          _waveformLevels.add(
+            _audioEngine.recordingState.value == AudioRecordingState.recording
+              ? _smoothedAmplitude
+              : 0.0,
+          );
         });
       }
     });
@@ -277,7 +295,35 @@ class _RecordingScreenState extends State<RecordingScreen> {
 
   void _finishRecordingAndTranscribe(String path) async {
     try {
+      // H1-41: Validate recording isn't corrupted
+      final file = File(path);
+      if (!file.existsSync() || file.lengthSync() < 1024) {
+        // File too small or missing — likely corrupted
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recording appears to be corrupted or empty. Please try again.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
       final duration = await _audioEngine.getDuration(path);
+      
+      if (duration.inMilliseconds < 500) {
+        // Duration too short — likely corrupted audio container
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recording is too short to process. Please try recording again.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
       
       // Reset engine state for fresh recordings
       _audioEngine.recordingState.value = AudioRecordingState.idle;
@@ -312,6 +358,51 @@ class _RecordingScreenState extends State<RecordingScreen> {
     _audioEngine.recordingState.removeListener(_onStateChanged);
     _amplitudeSubscription?.cancel();
     super.dispose();
+  }
+
+  // H1-19: Dedicated countdown banner for final 30 seconds
+  Widget _buildCountdownBanner(Duration remaining) {
+    final secs = remaining.inSeconds.clamp(0, 30);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$secs seconds remaining. Tap Stop to save, or upgrade to continue.',
+              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // H1-19: Free-tier countdown widget (shows remaining time)
+  Widget _buildFreeCountdown(Duration remaining) {
+    final mins = remaining.inMinutes;
+    final secs = remaining.inSeconds % 60;
+    final text = mins > 0
+        ? '$mins:${secs.toString().padLeft(2, '0')} remaining on free tier'
+        : '$secs seconds remaining on free tier';
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: remaining.inMinutes < 2 ? Colors.orange : Colors.grey,
+          fontSize: 14,
+        ),
+      ),
+    );
   }
 
   Widget _buildWaveform() {
@@ -546,19 +637,14 @@ class _RecordingScreenState extends State<RecordingScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_isFreeTier && state == AudioRecordingState.recording && elapsed.inSeconds >= 19 * 60 + 30)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.orange.withOpacity(0.2),
-                  child: const Text('30 seconds remaining. Tap Stop to save, or upgrade to continue.', style: TextStyle(color: Colors.orange)),
-                ),
+                _buildCountdownBanner(Duration(seconds: 20 * 60) - elapsed),
               const SizedBox(height: 20),
               Text(statusText, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 20),
               Text(_formatDuration(elapsed), style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
-              if (_isFreeTier && elapsed.inSeconds >= 15 * 60 && elapsed.inSeconds < 18 * 60)
-                const Text('5 minutes remaining on free-tier recording', style: TextStyle(color: Colors.grey)),
-              if (_isFreeTier && elapsed.inSeconds >= 18 * 60 && elapsed.inSeconds < 19 * 60 + 30)
-                const Text('2 minutes remaining', style: TextStyle(color: Colors.grey)),
+              // H1-19: Free-tier countdown widget
+              if (_isFreeTier && state == AudioRecordingState.recording && elapsed.inSeconds >= 15 * 60 && elapsed.inSeconds < 19 * 60 + 30)
+                _buildFreeCountdown(Duration(seconds: 20 * 60) - elapsed),
               const SizedBox(height: 40),
               _buildWaveform(),
               const SizedBox(height: 40),
