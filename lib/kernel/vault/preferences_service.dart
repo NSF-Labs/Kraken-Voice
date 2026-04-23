@@ -60,4 +60,34 @@ class PreferencesService {
   Future<void> setDefaultRetentionPolicy(String policy) async {
     await setString('default_retention_policy', policy);
   }
+
+  // ─── Branded Exports ───────────────────────────────────────────────────────
+
+  /// Path to the user's uploaded brand logo (PNG/JPG).
+  Future<String> getBrandLogoPath() async =>
+      getString('brand_logo_path');
+
+  Future<void> setBrandLogoPath(String path) async =>
+      setString('brand_logo_path', path);
+
+  /// Custom header text for exports.
+  Future<String> getBrandHeaderText() async =>
+      getString('brand_header_text');
+
+  Future<void> setBrandHeaderText(String text) async =>
+      setString('brand_header_text', text);
+
+  /// Custom footer text for exports.
+  Future<String> getBrandFooterText() async =>
+      getString('brand_footer_text');
+
+  Future<void> setBrandFooterText(String text) async =>
+      setString('brand_footer_text', text);
+
+  /// Brand accent color as hex string (e.g., '#818CF8').
+  Future<String> getBrandColor() async =>
+      getString('brand_color', defaultValue: '#818CF8');
+
+  Future<void> setBrandColor(String hex) async =>
+      setString('brand_color', hex);
 }

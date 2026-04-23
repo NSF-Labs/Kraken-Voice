@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -999,6 +1000,28 @@ $transcript''';
     // Clean up stale exports ONCE before generating new files
     await KrakenExportService.cleanupTempExports();
 
+    // Load brand config from preferences
+    final prefs = RepositoryProvider.of<PreferencesService>(context, listen: false);
+    final logoPath = await prefs.getBrandLogoPath();
+    final headerText = await prefs.getBrandHeaderText();
+    final footerText = await prefs.getBrandFooterText();
+    final brandColor = await prefs.getBrandColor();
+
+    Uint8List? logoBytes;
+    if (logoPath.isNotEmpty) {
+      final logoFile = File(logoPath);
+      if (await logoFile.exists()) {
+        logoBytes = await logoFile.readAsBytes();
+      }
+    }
+
+    final branding = BrandConfig(
+      logoBytes: logoBytes,
+      headerText: headerText.isNotEmpty ? headerText : null,
+      footerText: footerText.isNotEmpty ? footerText : null,
+      accentColorHex: brandColor.isNotEmpty ? brandColor : '#818CF8',
+    );
+
     // PDF (auto-includes summary when available)
     if (selected['pdf'] == true) {
       try {
@@ -1007,6 +1030,7 @@ $transcript''';
           title: _currentTitle,
           transcriptText: _transcriptText,
           summaryJson: _summaryJson,
+          branding: branding,
         );
         if (await pdfFile.exists()) files.add(XFile(pdfFile.path));
       } catch (e) {
@@ -1022,6 +1046,7 @@ $transcript''';
           title: _currentTitle,
           transcriptText: _transcriptText,
           summaryJson: _summaryJson,
+          branding: branding,
         );
         if (await docxFile.exists()) files.add(XFile(docxFile.path));
       } catch (e) {

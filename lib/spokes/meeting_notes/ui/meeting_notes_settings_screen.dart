@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kraken_hub/kernel/kernel.dart';
 import 'package:kraken_hub/shell/design/tokens.dart';
 
@@ -12,13 +14,68 @@ class MeetingNotesSettingsScreen extends StatefulWidget {
 
 class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen> {
   late final RetentionService _retentionService;
-  late final VaultService _vault;
+  late final PreferencesService _prefs;
+  late final EntitlementService _entitlementService;
+
+  // Brand settings state
+  String _logoPath = '';
+  String _headerText = '';
+  String _footerText = '';
+  String _brandColorHex = '#818CF8';
+  bool _isPaidTier = false;
+
+  final _headerController = TextEditingController();
+  final _footerController = TextEditingController();
+
+  // Predefined brand color palette
+  static const List<String> _colorPalette = [
+    '#818CF8', // Indigo (default)
+    '#F472B6', // Pink
+    '#34D399', // Emerald
+    '#60A5FA', // Blue
+    '#FBBF24', // Amber
+    '#A78BFA', // Purple
+    '#F87171', // Red
+    '#2DD4BF', // Teal
+    '#FB923C', // Orange
+    '#E879F9', // Fuchsia
+    '#94A3B8', // Slate
+    '#FFFFFF', // White
+  ];
 
   @override
   void initState() {
     super.initState();
-    _vault = RepositoryProvider.of<VaultService>(context, listen: false);
     _retentionService = RepositoryProvider.of<RetentionService>(context, listen: false);
+    _prefs = RepositoryProvider.of<PreferencesService>(context, listen: false);
+    _entitlementService = RepositoryProvider.of<EntitlementService>(context, listen: false);
+    _loadBrandSettings();
+  }
+
+  Future<void> _loadBrandSettings() async {
+    _isPaidTier = _entitlementService.isUnlocked('com.kraken.meeting_notes');
+    final logo = await _prefs.getBrandLogoPath();
+    final header = await _prefs.getBrandHeaderText();
+    final footer = await _prefs.getBrandFooterText();
+    final color = await _prefs.getBrandColor();
+
+    if (mounted) {
+      setState(() {
+        _logoPath = logo;
+        _headerText = header;
+        _footerText = footer;
+        _brandColorHex = color.isNotEmpty ? color : '#818CF8';
+        _headerController.text = header;
+        _footerController.text = footer;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _headerController.dispose();
+    _footerController.dispose();
+    super.dispose();
   }
 
   String _formatBytes(int bytes) {
@@ -45,7 +102,7 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
         children: [
           _buildStorageSection(),
           const SizedBox(height: KrakenSpacing.s6),
-          _buildExportSettingsPlaceholder(),
+          _buildBrandedExportsSection(),
         ],
       ),
     );
@@ -96,7 +153,9 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
     );
   }
 
-  Widget _buildExportSettingsPlaceholder() {
+  // ─── Branded Exports ───────────────────────────────────────────────────────
+
+  Widget _buildBrandedExportsSection() {
     return Card(
       color: KrakenColors.surfaceElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KrakenRadius.lg)),
@@ -105,25 +164,427 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Branded Exports', style: KrakenText.bodyLg()),
+            Row(
+              children: [
+                const Icon(Icons.palette_outlined, color: KrakenColors.accent, size: 22),
+                const SizedBox(width: KrakenSpacing.s2),
+                Text('Branded Exports', style: KrakenText.bodyLg()),
+                const Spacer(),
+                if (_isPaidTier)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: KrakenColors.accent.withAlpha(30),
+                      borderRadius: BorderRadius.circular(KrakenRadius.sm),
+                    ),
+                    child: Text('PRO', style: KrakenText.bodySm(color: KrakenColors.accent)),
+                  ),
+              ],
+            ),
             const SizedBox(height: KrakenSpacing.s2),
             Text(
-              'Customize your PDF and Word exports with your company logo and colors.',
-              style: KrakenText.bodyMd(color: KrakenColors.textMuted),
+              'Customize your PDF and Word exports with your company logo, colors, and custom header/footer text.',
+              style: KrakenText.bodyMd(color: KrakenColors.textSecondary),
             ),
             const SizedBox(height: KrakenSpacing.s4),
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Implement Premium gating
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: KrakenColors.accent,
-              ),
-              child: const Text('Configure Branded Exports'),
-            ),
+
+            if (!_isPaidTier) ...[
+              _buildUpgradePrompt(),
+            ] else ...[
+              _buildLogoUpload(),
+              const Divider(color: KrakenColors.border, height: 32),
+              _buildHeaderFooterFields(),
+              const Divider(color: KrakenColors.border, height: 32),
+              _buildColorPicker(),
+              const SizedBox(height: KrakenSpacing.s5),
+              _buildExportPreview(),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildUpgradePrompt() {
+    return Container(
+      padding: const EdgeInsets.all(KrakenSpacing.s4),
+      decoration: BoxDecoration(
+        color: KrakenColors.bg,
+        borderRadius: BorderRadius.circular(KrakenRadius.md),
+        border: Border.all(color: KrakenColors.accent.withAlpha(60)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.lock_outline, color: KrakenColors.accent, size: 36),
+          const SizedBox(height: KrakenSpacing.s3),
+          Text('Upgrade to Pro', style: KrakenText.displayMd()),
+          const SizedBox(height: KrakenSpacing.s2),
+          Text(
+            'Add your company logo, custom headers, footers, and brand colors to all exported documents.',
+            textAlign: TextAlign.center,
+            style: KrakenText.bodyMd(color: KrakenColors.textSecondary),
+          ),
+          const SizedBox(height: KrakenSpacing.s4),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Upgrade'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: KrakenColors.accent,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KrakenRadius.md)),
+              ),
+              onPressed: () {
+                // TODO: In-app purchase flow
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('In-app purchases coming soon.')),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Logo Upload ───────────────────────────────────────────────────────────
+
+  Widget _buildLogoUpload() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Company Logo', style: KrakenText.bodyMd()),
+        const SizedBox(height: KrakenSpacing.s1),
+        Text(
+          'Appears in the cover area of your PDF exports.',
+          style: KrakenText.bodySm(color: KrakenColors.textMuted),
+        ),
+        const SizedBox(height: KrakenSpacing.s3),
+        Row(
+          children: [
+            // Logo preview
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: KrakenColors.bg,
+                borderRadius: BorderRadius.circular(KrakenRadius.md),
+                border: Border.all(color: KrakenColors.border),
+              ),
+              child: _logoPath.isNotEmpty && File(_logoPath).existsSync()
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(KrakenRadius.md),
+                      child: Image.file(
+                        File(_logoPath),
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : const Icon(Icons.image_outlined, color: KrakenColors.textMuted, size: 28),
+            ),
+            const SizedBox(width: KrakenSpacing.s3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.upload, size: 16),
+                    label: Text(_logoPath.isEmpty ? 'Upload Logo' : 'Change Logo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: KrakenColors.accent,
+                      side: const BorderSide(color: KrakenColors.accent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KrakenRadius.md)),
+                    ),
+                    onPressed: _pickLogo,
+                  ),
+                  if (_logoPath.isNotEmpty) ...[
+                    const SizedBox(height: KrakenSpacing.s1),
+                    TextButton(
+                      onPressed: _removeLogo,
+                      child: Text('Remove', style: KrakenText.bodySm(color: KrakenColors.textMuted)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 400, maxHeight: 400);
+    if (picked == null) return;
+
+    // Copy to app's internal directory for persistence
+    final appDir = await Directory('${(await Directory.systemTemp.parent.path)}').parent;
+    final internalDir = Directory('${appDir.path}/brand');
+    if (!await internalDir.exists()) await internalDir.create(recursive: true);
+
+    final ext = picked.path.split('.').last.toLowerCase();
+    final destPath = '${internalDir.path}/brand_logo.$ext';
+    await File(picked.path).copy(destPath);
+
+    await _prefs.setBrandLogoPath(destPath);
+    setState(() => _logoPath = destPath);
+  }
+
+  Future<void> _removeLogo() async {
+    if (_logoPath.isNotEmpty) {
+      final file = File(_logoPath);
+      if (await file.exists()) await file.delete();
+    }
+    await _prefs.setBrandLogoPath('');
+    setState(() => _logoPath = '');
+  }
+
+  // ─── Header / Footer ──────────────────────────────────────────────────────
+
+  Widget _buildHeaderFooterFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Header Text', style: KrakenText.bodyMd()),
+        const SizedBox(height: KrakenSpacing.s1),
+        Text(
+          'Appears at the top of every page in PDF exports.',
+          style: KrakenText.bodySm(color: KrakenColors.textMuted),
+        ),
+        const SizedBox(height: KrakenSpacing.s2),
+        TextField(
+          controller: _headerController,
+          style: KrakenText.bodyMd(),
+          decoration: InputDecoration(
+            hintText: 'e.g., Confidential — Acme Corporation',
+            hintStyle: KrakenText.bodySm(color: KrakenColors.textMuted),
+            filled: true,
+            fillColor: KrakenColors.bg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KrakenRadius.md),
+              borderSide: const BorderSide(color: KrakenColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KrakenRadius.md),
+              borderSide: const BorderSide(color: KrakenColors.accent),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+          onChanged: (v) {
+            _headerText = v;
+            _prefs.setBrandHeaderText(v);
+          },
+        ),
+        const SizedBox(height: KrakenSpacing.s5),
+
+        Text('Footer Text', style: KrakenText.bodyMd()),
+        const SizedBox(height: KrakenSpacing.s1),
+        Text(
+          'Replaces "Generated by The Kraken" in the footer.',
+          style: KrakenText.bodySm(color: KrakenColors.textMuted),
+        ),
+        const SizedBox(height: KrakenSpacing.s2),
+        TextField(
+          controller: _footerController,
+          style: KrakenText.bodyMd(),
+          decoration: InputDecoration(
+            hintText: 'e.g., © 2026 Acme Corp. All rights reserved.',
+            hintStyle: KrakenText.bodySm(color: KrakenColors.textMuted),
+            filled: true,
+            fillColor: KrakenColors.bg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KrakenRadius.md),
+              borderSide: const BorderSide(color: KrakenColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KrakenRadius.md),
+              borderSide: const BorderSide(color: KrakenColors.accent),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+          onChanged: (v) {
+            _footerText = v;
+            _prefs.setBrandFooterText(v);
+          },
+        ),
+      ],
+    );
+  }
+
+  // ─── Color Picker ──────────────────────────────────────────────────────────
+
+  Widget _buildColorPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Brand Color', style: KrakenText.bodyMd()),
+        const SizedBox(height: KrakenSpacing.s1),
+        Text(
+          'Used for section headers, dividers, and accents in exported documents.',
+          style: KrakenText.bodySm(color: KrakenColors.textMuted),
+        ),
+        const SizedBox(height: KrakenSpacing.s3),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: _colorPalette.map((hex) {
+            final isSelected = _brandColorHex.toUpperCase() == hex.toUpperCase();
+            final color = _hexToColor(hex);
+            return GestureDetector(
+              onTap: () {
+                setState(() => _brandColorHex = hex);
+                _prefs.setBrandColor(hex);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(color: KrakenColors.textPrimary, width: 3)
+                      : Border.all(color: KrakenColors.border, width: 1),
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: color.withAlpha(100), blurRadius: 8, spreadRadius: 2)]
+                      : [],
+                ),
+                child: isSelected
+                    ? Icon(Icons.check, color: _isLightColor(color) ? Colors.black : Colors.white, size: 18)
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // ─── Export Preview ─────────────────────────────────────────────────────────
+
+  Widget _buildExportPreview() {
+    final brandColor = _hexToColor(_brandColorHex);
+    final hasLogo = _logoPath.isNotEmpty && File(_logoPath).existsSync();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Preview', style: KrakenText.bodyMd()),
+        const SizedBox(height: KrakenSpacing.s2),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: KrakenColors.bg,
+            borderRadius: BorderRadius.circular(KrakenRadius.md),
+            border: Border.all(color: KrakenColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header preview
+              if (_headerText.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: brandColor, width: 1)),
+                  ),
+                  child: Text(
+                    _headerText,
+                    style: KrakenText.bodySm(color: brandColor),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Cover area preview
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1B2E),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    if (hasLogo) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.file(
+                          File(_logoPath),
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Meeting Title',
+                            style: KrakenText.bodyMd(color: Colors.white),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Apr 23, 2026  •  45 min',
+                            style: KrakenText.bodySm(color: brandColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Section header preview
+              Text(
+                'Summary',
+                style: KrakenText.bodyMd(color: brandColor),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'A brief executive summary of the meeting...',
+                style: KrakenText.bodySm(color: KrakenColors.textSecondary),
+              ),
+              const SizedBox(height: 10),
+
+              // Footer preview
+              Divider(color: KrakenColors.border.withAlpha(60)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _footerText.isNotEmpty ? _footerText : 'Generated by The Kraken',
+                    style: KrakenText.bodySm(color: KrakenColors.textMuted),
+                  ),
+                  Text(
+                    'Page 1 of 3',
+                    style: KrakenText.bodySm(color: KrakenColors.textMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
+  Color _hexToColor(String hex) {
+    final h = hex.replaceAll('#', '');
+    if (h.length != 6) return KrakenColors.accent;
+    return Color(int.parse('FF$h', radix: 16));
+  }
+
+  bool _isLightColor(Color c) {
+    return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) > 0.5;
   }
 }

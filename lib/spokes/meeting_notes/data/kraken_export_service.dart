@@ -1,10 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
 import 'package:kraken_hub/spokes/meeting_notes/data/folder_repository.dart';
+
+/// Branding configuration for professional exports.
+class BrandConfig {
+  final Uint8List? logoBytes;
+  final String? headerText;
+  final String? footerText;
+  final String accentColorHex;
+
+  const BrandConfig({
+    this.logoBytes,
+    this.headerText,
+    this.footerText,
+    this.accentColorHex = '#818CF8',
+  });
+
+  PdfColor get accentColor => PdfColor.fromHex(accentColorHex);
+  bool get hasLogo => logoBytes != null && logoBytes!.isNotEmpty;
+  bool get hasHeader => headerText != null && headerText!.isNotEmpty;
+  bool get hasFooter => footerText != null && footerText!.isNotEmpty;
+}
 
 /// Centralized export service for meeting recordings.
 ///
@@ -128,7 +149,10 @@ class KrakenExportService {
     required String title,
     String? transcriptText,
     String? summaryJson,
+    BrandConfig? branding,
   }) async {
+
+    final brand = branding ?? const BrandConfig();
 
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
@@ -160,35 +184,36 @@ class KrakenExportService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
         margin: const pw.EdgeInsets.all(48),
-        footer: (context) => _buildFooter(context),
+        header: brand.hasHeader ? (context) => _buildHeader(brand) : null,
+        footer: (context) => _buildFooter(context, brand),
         build: (context) => [
           // Cover area
-          _buildCover(title, dateStr, durationStr),
+          _buildCover(title, dateStr, durationStr, brand),
           pw.SizedBox(height: 24),
 
           // Summary sections
           if (summary != null) ...[
             if (summary['tldr'] != null) ...[
-              _sectionHeader('Summary'),
+              _sectionHeader('Summary', brand),
               _bodyText(summary['tldr'] as String),
               pw.SizedBox(height: 16),
             ],
             if (summary['summary'] != null) ...[
-              _sectionHeader('Executive Summary'),
+              _sectionHeader('Executive Summary', brand),
               _bodyText(summary['summary'] as String),
               pw.SizedBox(height: 16),
             ],
-            ..._buildListItems('Key Points', summary['key_points']),
-            ..._buildListItems('Decisions', summary['decisions']),
-            ..._buildChecklistItems('Action Items', summary['action_items']),
-            ..._buildListItems('Open Questions', summary['open_questions']),
+            ..._buildListItems('Key Points', summary['key_points'], brand),
+            ..._buildListItems('Decisions', summary['decisions'], brand),
+            ..._buildChecklistItems('Action Items', summary['action_items'], brand),
+            ..._buildListItems('Open Questions', summary['open_questions'], brand),
           ],
 
           // Transcript — chunked into page-safe paragraphs
           if (transcriptText != null && transcriptText.isNotEmpty) ...[
-            pw.Divider(color: PdfColors.grey400),
+            pw.Divider(color: brand.accentColor.shade(0.5)),
             pw.SizedBox(height: 12),
-            _sectionHeader('Full Transcript'),
+            _sectionHeader('Full Transcript', brand),
             pw.SizedBox(height: 8),
             ..._chunkText(transcriptText).map(
               (chunk) => pw.Padding(
@@ -209,7 +234,7 @@ class KrakenExportService {
 
   // ── PDF building blocks ──
 
-  pw.Widget _buildCover(String title, String date, String duration) {
+  pw.Widget _buildCover(String title, String date, String duration, BrandConfig brand) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(24),
       decoration: pw.BoxDecoration(
@@ -219,24 +244,50 @@ class KrakenExportService {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              font: pw.Font.helveticaBold(),
-              fontSize: 22,
-              color: PdfColors.white,
+          // Logo + Title row
+          if (brand.hasLogo) ...[
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Image(
+                  pw.MemoryImage(brand.logoBytes!),
+                  width: 48,
+                  height: 48,
+                  fit: pw.BoxFit.contain,
+                ),
+                pw.SizedBox(width: 16),
+                pw.Expanded(
+                  child: pw.Text(
+                    title,
+                    style: pw.TextStyle(
+                      font: pw.Font.helveticaBold(),
+                      fontSize: 22,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
+          ] else ...[
+            pw.Text(
+              title,
+              style: pw.TextStyle(
+                font: pw.Font.helveticaBold(),
+                fontSize: 22,
+                color: PdfColors.white,
+              ),
+            ),
+          ],
           pw.SizedBox(height: 8),
           pw.Row(children: [
             pw.Text(
               date,
-              style: pw.TextStyle(fontSize: 12, color: PdfColor.fromHex('#A5B4FC')),
+              style: pw.TextStyle(fontSize: 12, color: brand.accentColor),
             ),
             pw.SizedBox(width: 16),
             pw.Text(
               duration,
-              style: pw.TextStyle(fontSize: 12, color: PdfColor.fromHex('#A5B4FC')),
+              style: pw.TextStyle(fontSize: 12, color: brand.accentColor),
             ),
           ]),
         ],
@@ -244,12 +295,31 @@ class KrakenExportService {
     );
   }
 
-  pw.Widget _buildFooter(pw.Context context) {
+  pw.Widget _buildHeader(BrandConfig brand) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 12),
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: brand.accentColor, width: 0.5)),
+      ),
+      child: pw.Text(
+        brand.headerText ?? '',
+        style: pw.TextStyle(
+          fontSize: 9,
+          color: brand.accentColor,
+          fontItalic: pw.Font.helveticaOblique(),
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _buildFooter(pw.Context context, BrandConfig brand) {
+    final footerText = brand.hasFooter ? brand.footerText! : 'Generated by The Kraken';
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          'Generated by The Kraken',
+          footerText,
           style: pw.TextStyle(
             fontSize: 9,
             color: PdfColors.grey500,
@@ -264,7 +334,7 @@ class KrakenExportService {
     );
   }
 
-  pw.Widget _sectionHeader(String text) {
+  pw.Widget _sectionHeader(String text, BrandConfig brand) {
     return pw.Padding(
       padding: const pw.EdgeInsets.only(bottom: 6),
       child: pw.Text(
@@ -272,7 +342,7 @@ class KrakenExportService {
         style: pw.TextStyle(
           font: pw.Font.helveticaBold(),
           fontSize: 14,
-          color: PdfColor.fromHex('#818CF8'),
+          color: brand.accentColor,
         ),
       ),
     );
@@ -287,10 +357,10 @@ class KrakenExportService {
 
   /// Build list section items as flat widgets (not wrapped in Column)
   /// so MultiPage can break them across pages.
-  List<pw.Widget> _buildListItems(String heading, dynamic items) {
+  List<pw.Widget> _buildListItems(String heading, dynamic items, BrandConfig brand) {
     if (items == null || items is! List || items.isEmpty) return [];
     return [
-      _sectionHeader(heading),
+      _sectionHeader(heading, brand),
       ...items.map<pw.Widget>((item) => pw.Padding(
             padding: const pw.EdgeInsets.only(left: 12, bottom: 3),
             child: pw.Row(
@@ -305,10 +375,10 @@ class KrakenExportService {
     ];
   }
 
-  List<pw.Widget> _buildChecklistItems(String heading, dynamic items) {
+  List<pw.Widget> _buildChecklistItems(String heading, dynamic items, BrandConfig brand) {
     if (items == null || items is! List || items.isEmpty) return [];
     return [
-      _sectionHeader(heading),
+      _sectionHeader(heading, brand),
       ...items.map<pw.Widget>((item) => pw.Padding(
             padding: const pw.EdgeInsets.only(left: 12, bottom: 3),
             child: pw.Row(
@@ -341,7 +411,10 @@ class KrakenExportService {
     required String title,
     String? transcriptText,
     String? summaryJson,
+    BrandConfig? branding,
   }) async {
+
+    final brand = branding ?? const BrandConfig();
 
     // Parse summary
     Map<String, dynamic>? summary;
@@ -366,6 +439,9 @@ class KrakenExportService {
     // Title
     body.writeln(_docxParagraph(title, style: 'Title'));
     body.writeln(_docxParagraph('$dateStr  •  $durationStr', style: 'Subtitle'));
+    if (brand.hasHeader) {
+      body.writeln(_docxParagraph(brand.headerText!, italic: true, color: brand.accentColorHex.replaceAll('#', '')));
+    }
     body.writeln(_docxParagraph(''));
 
     // Summary
@@ -398,7 +474,8 @@ class KrakenExportService {
 
     // Footer
     body.writeln(_docxParagraph(''));
-    body.writeln(_docxParagraph('Generated by The Kraken', italic: true, color: '808080'));
+    final docxFooter = brand.hasFooter ? brand.footerText! : 'Generated by The Kraken';
+    body.writeln(_docxParagraph(docxFooter, italic: true, color: '808080'));
 
     // Section properties (required for valid DOCX)
     body.writeln('<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>');

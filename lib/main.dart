@@ -54,6 +54,7 @@ void main() async {
         RepositoryProvider.value(value: kernelContext),
         RepositoryProvider.value(value: preferencesService),
         RepositoryProvider.value(value: retentionService),
+        RepositoryProvider<EntitlementService>.value(value: entitlementService),
       ],
       child: MultiBlocProvider(
         providers: [
