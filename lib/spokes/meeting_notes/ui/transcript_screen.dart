@@ -345,7 +345,7 @@ $transcript''';
     try {
       await inference.loadModel();
       
-      final stream = inference.generateStream(prompt, maxTokens: 512);
+      final stream = inference.generateStream(prompt, maxTokens: 1024);
       stream.listen(
         (token) {
           if (mounted) setState(() => _streamingSummary += token.text);
@@ -367,36 +367,54 @@ $transcript''';
               cleaned = jsonMatch.group(0)!;
             }
             // Deep-clean: parse JSON, sanitize each value, re-encode
+            bool isValidJson = false;
             try {
               final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-              final sanitized = <String, dynamic>{};
-              for (final entry in parsed.entries) {
-                if (entry.value is String) {
-                  sanitized[entry.key] = _cleanSummaryText(entry.value as String);
-                } else if (entry.value is List) {
-                  sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
-                } else {
-                  sanitized[entry.key] = entry.value;
+              // Validate required structure — must have at least 'tldr' or 'summary' key
+              if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
+                final sanitized = <String, dynamic>{};
+                for (final entry in parsed.entries) {
+                  if (entry.value is String) {
+                    sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+                  } else if (entry.value is List) {
+                    sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+                  } else {
+                    sanitized[entry.key] = entry.value;
+                  }
                 }
+                cleaned = jsonEncode(sanitized);
+                isValidJson = true;
               }
-              cleaned = jsonEncode(sanitized);
             } catch (_) {
-              // If JSON parsing fails, keep the string as-is for the fallback renderer
+              // JSON parsing failed — output is not usable
             }
-            
-            setState(() {
-              _summaryJson = cleaned;
-              _isGeneratingSummary = false;
-              _viewingVersionIndex = -1;
-            });
-            await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
-            // Sync action items from new summary
-            await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
-            // Reload version history
-            final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
-            if (mounted) setState(() => _summaryVersions = versions);
-            // AI-suggested name (N1) — runs after summary is saved
-            _generateAIName(cleaned);
+
+            if (isValidJson) {
+              setState(() {
+                _summaryJson = cleaned;
+                _isGeneratingSummary = false;
+                _viewingVersionIndex = -1;
+              });
+              await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
+              // Sync action items from new summary
+              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
+              // Reload version history
+              final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
+              if (mounted) setState(() => _summaryVersions = versions);
+              // AI-suggested name (N1) — runs after summary is saved
+              _generateAIName(cleaned);
+            } else {
+              // Invalid output — do NOT persist, show error, let user retry
+              setState(() {
+                _isGeneratingSummary = false;
+                _streamingSummary = '';
+              });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Summary generation produced invalid output. Please try again.')),
+                );
+              }
+            }
           }
         },
         onError: (e) {
@@ -500,7 +518,7 @@ $transcript''';
     try {
       await inference.loadModel();
       
-      final stream = inference.generateStream(prompt, maxTokens: 512);
+      final stream = inference.generateStream(prompt, maxTokens: 1024);
       stream.listen(
         (token) {
           if (mounted) setState(() => _streamingSummary += token.text);
@@ -521,30 +539,47 @@ $transcript''';
               cleaned = jsonMatch.group(0)!;
             }
             // Deep-clean: parse JSON, sanitize each value, re-encode
+            bool isValidJson = false;
             try {
               final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-              final sanitized = <String, dynamic>{};
-              for (final entry in parsed.entries) {
-                if (entry.value is String) {
-                  sanitized[entry.key] = _cleanSummaryText(entry.value as String);
-                } else if (entry.value is List) {
-                  sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
-                } else {
-                  sanitized[entry.key] = entry.value;
+              if (parsed.containsKey('tldr') || parsed.containsKey('summary') || parsed.containsKey('key_points')) {
+                final sanitized = <String, dynamic>{};
+                for (final entry in parsed.entries) {
+                  if (entry.value is String) {
+                    sanitized[entry.key] = _cleanSummaryText(entry.value as String);
+                  } else if (entry.value is List) {
+                    sanitized[entry.key] = (entry.value as List).map((e) => _cleanSummaryText(e.toString())).toList();
+                  } else {
+                    sanitized[entry.key] = entry.value;
+                  }
                 }
+                cleaned = jsonEncode(sanitized);
+                isValidJson = true;
               }
-              cleaned = jsonEncode(sanitized);
             } catch (_) {}
-            setState(() {
-              _summaryJson = cleaned;
-              _isGeneratingSummary = false;
-              _viewingVersionIndex = -1;
-            });
-            await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
-            // Sync action items from refined summary
-            await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
-            final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
-            if (mounted) setState(() => _summaryVersions = versions);
+
+            if (isValidJson) {
+              setState(() {
+                _summaryJson = cleaned;
+                _isGeneratingSummary = false;
+                _viewingVersionIndex = -1;
+              });
+              await _folderRepo.saveSummaryJson(widget.recording.audioPath, cleaned);
+              // Sync action items from refined summary
+              await _folderRepo.syncActionItemsFromSummary(widget.recording.id, cleaned);
+              final versions = await _folderRepo.getSummaryVersions(widget.recording.audioPath);
+              if (mounted) setState(() => _summaryVersions = versions);
+            } else {
+              setState(() {
+                _isGeneratingSummary = false;
+                _streamingSummary = '';
+              });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Refine produced invalid output. Please try again.')),
+                );
+              }
+            }
           }
         },
         onError: (e) {
