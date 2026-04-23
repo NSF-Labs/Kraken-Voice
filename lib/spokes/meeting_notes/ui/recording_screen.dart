@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../kernel/audio/audio_channel.dart';
+import '../../../kernel/audio/permission_helper.dart';
 import '../../../kernel/audio/transcription_engine.dart';
 import '../../../kernel/kernel.dart';
 import '../../../kernel/vault/vault_service.dart';
@@ -122,6 +123,10 @@ class _RecordingScreenState extends State<RecordingScreen> {
   }
 
   void _startRecording() async {
+    // Check microphone permission first (H1-20, H1-21)
+    final hasPermission = await PermissionHelper.ensureMicrophonePermission(context);
+    if (!hasPermission) return;
+
     try {
       final path = await _audioEngine.startRecording();
       if (path != null) {
