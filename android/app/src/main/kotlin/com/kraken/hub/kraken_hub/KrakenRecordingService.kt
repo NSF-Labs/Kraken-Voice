@@ -247,14 +247,20 @@ class KrakenRecordingService : Service() {
     private fun registerPhoneCallListener() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // API 31+ uses TelephonyCallback
-            val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-                override fun onCallStateChanged(state: Int) {
-                    handleCallState(state)
+            // API 31+ uses TelephonyCallback — requires READ_PHONE_STATE at runtime
+            try {
+                val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+                    override fun onCallStateChanged(state: Int) {
+                        handleCallState(state)
+                    }
                 }
+                telephonyCallback = callback
+                telephonyManager?.registerTelephonyCallback(mainExecutor, callback)
+            } catch (e: SecurityException) {
+                // READ_PHONE_STATE not granted — phone call auto-pause won't work,
+                // but recording should proceed normally.
+                android.util.Log.w("KrakenRecording", "Phone call listener skipped: ${e.message}")
             }
-            telephonyCallback = callback
-            telephonyManager?.registerTelephonyCallback(mainExecutor, callback)
         }
         // For older APIs, best-effort via AudioManager focus changes (omitted for brevity)
     }
