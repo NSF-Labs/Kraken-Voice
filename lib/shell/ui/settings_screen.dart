@@ -9,6 +9,7 @@ import '../../kernel/voice_input/faster_whisper_voice_input.dart';
 import '../../spokes/meeting_notes/ui/summary_quality_test_screen.dart';
 import '../../spokes/meeting_notes/ui/language_benchmark_screen.dart';
 import '../../kernel/retention/retention_service.dart';
+import '../../spokes/meeting_notes/ui/meeting_notes_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -262,6 +263,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: _showDefaultRetentionPicker,
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Branded Exports'),
+                _buildSettingsCard(
+                  child: ListTile(
+                    leading: const Icon(Icons.palette_outlined, color: Color(0xFFA5B4FC)),
+                    title: const Text('Logo, Colors & Headers', style: TextStyle(color: Colors.white)),
+                    subtitle: Text(
+                      'Customize PDF and Word export branding',
+                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MeetingNotesSettingsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 24),
