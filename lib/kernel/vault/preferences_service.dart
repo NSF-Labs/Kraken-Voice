@@ -49,6 +49,18 @@ class PreferencesService {
     await prefs.setString(key, value);
   }
 
+  /// Get an integer preference.
+  Future<int?> getInt(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(key);
+  }
+
+  /// Set an integer preference.
+  Future<void> setInt(String key, int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(key, value);
+  }
+
   // ─── Retention ──────────────────────────────────────────────────────────────
 
   /// Get the default retention policy for new recordings.

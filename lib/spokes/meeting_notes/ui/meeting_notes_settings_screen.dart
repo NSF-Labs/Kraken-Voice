@@ -25,6 +25,10 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
   String _brandColorHex = '#818CF8';
   bool _isPaidTier = false;
 
+  // Retention settings (H3-05, H3-13)
+  String _defaultRetentionPolicy = '90_day';
+  int _storageCap = RetentionService.maxStorageBytes;
+
   final _headerController = TextEditingController();
   final _footerController = TextEditingController();
 
@@ -51,6 +55,18 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
     _prefs = RepositoryProvider.of<PreferencesService>(context, listen: false);
     _entitlementService = RepositoryProvider.of<EntitlementService>(context, listen: false);
     _loadBrandSettings();
+    _loadRetentionSettings();
+  }
+
+  Future<void> _loadRetentionSettings() async {
+    final policy = await _prefs.getString('default_retention_policy') ?? '90_day';
+    final cap = await _prefs.getInt('storage_cap_bytes') ?? RetentionService.maxStorageBytes;
+    if (mounted) {
+      setState(() {
+        _defaultRetentionPolicy = policy;
+        _storageCap = cap;
+      });
+    }
   }
 
   Future<void> _loadBrandSettings() async {
@@ -120,39 +136,126 @@ class _MeetingNotesSettingsScreenState extends State<MeetingNotesSettingsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Storage Usage', style: KrakenText.bodyLg()),
+            Text('Storage & Retention', style: KrakenText.bodyLg()),
             const SizedBox(height: KrakenSpacing.s2),
+            
+            // H3-18: Storage usage bar
             ValueListenableBuilder<int>(
               valueListenable: _retentionService.currentStorageBytes,
               builder: (context, usedBytes, child) {
-                final double percent = usedBytes / RetentionService.maxStorageBytes;
+                final double percent = usedBytes / _storageCap;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_formatBytes(usedBytes)} of ${_formatBytes(RetentionService.maxStorageBytes)} used',
+                      '${_formatBytes(usedBytes)} of ${_formatBytes(_storageCap)} used',
                       style: KrakenText.bodyMd(),
                     ),
                     const SizedBox(height: KrakenSpacing.s2),
-                    LinearProgressIndicator(
-                      value: percent,
-                      backgroundColor: KrakenColors.surface,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        percent > 0.9 ? Colors.redAccent : KrakenColors.accent,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: percent.clamp(0.0, 1.0),
+                        backgroundColor: KrakenColors.surface,
+                        minHeight: 8,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          percent > 0.9 ? Colors.redAccent : KrakenColors.accent,
+                        ),
                       ),
                     ),
                     const SizedBox(height: KrakenSpacing.s2),
                     Text(
-                      'Kraken automatically deletes older audio when storage is full. Transcripts and summaries are always kept.',
+                      'Kraken automatically deletes older audio when storage is full. '
+                      'Transcripts and summaries are always kept.',
                       style: KrakenText.bodySm(color: KrakenColors.textMuted),
                     ),
                   ],
                 );
               },
             ),
+
+            const Divider(color: KrakenColors.border, height: 32),
+
+            // H3-13, H3-20: Configurable storage cap
+            Text('Storage Cap', style: KrakenText.bodyMd()),
+            const SizedBox(height: KrakenSpacing.s1),
+            Text(
+              'Maximum disk space for audio files.',
+              style: KrakenText.bodySm(color: KrakenColors.textMuted),
+            ),
+            const SizedBox(height: KrakenSpacing.s2),
+            Row(
+              children: [
+                Text('500 MB', style: KrakenText.bodySm(color: KrakenColors.textMuted)),
+                Expanded(
+                  child: Slider(
+                    value: _storageCap.toDouble(),
+                    min: 500 * 1024 * 1024,   // 500 MB
+                    max: 10 * 1024 * 1024 * 1024, // 10 GB
+                    divisions: 19,
+                    activeColor: KrakenColors.accent,
+                    label: _formatBytes(_storageCap),
+                    onChanged: (val) {
+                      setState(() => _storageCap = val.toInt());
+                    },
+                    onChangeEnd: (val) async {
+                      await _prefs.setInt('storage_cap_bytes', val.toInt());
+                    },
+                  ),
+                ),
+                Text('10 GB', style: KrakenText.bodySm(color: KrakenColors.textMuted)),
+              ],
+            ),
+
+            const Divider(color: KrakenColors.border, height: 32),
+
+            // H3-05: Default retention policy
+            Text('Default Retention Policy', style: KrakenText.bodyMd()),
+            const SizedBox(height: KrakenSpacing.s1),
+            Text(
+              'Applied to new recordings. Each recording can be changed individually.',
+              style: KrakenText.bodySm(color: KrakenColors.textMuted),
+            ),
+            const SizedBox(height: KrakenSpacing.s2),
+            _retentionOption(
+              'delete_after_transcription',
+              'Delete after transcription',
+              'Audio removed once transcription completes',
+              Icons.auto_delete,
+            ),
+            _retentionOption(
+              '90_day',
+              'Keep 90 days',
+              'Audio auto-deleted after 90 days',
+              Icons.calendar_today,
+            ),
+            _retentionOption(
+              'keep_forever',
+              'Keep forever',
+              'Audio retained until you delete or cap is reached',
+              Icons.all_inclusive,
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _retentionOption(String value, String title, String subtitle, IconData icon) {
+    final selected = _defaultRetentionPolicy == value;
+    return ListTile(
+      leading: Icon(icon, color: selected ? KrakenColors.accent : KrakenColors.textMuted, size: 22),
+      title: Text(title, style: KrakenText.bodyMd(color: selected ? KrakenColors.accent : KrakenColors.textPrimary)),
+      subtitle: Text(subtitle, style: KrakenText.bodySm(color: KrakenColors.textMuted)),
+      trailing: selected
+          ? const Icon(Icons.check_circle, color: KrakenColors.accent, size: 22)
+          : null,
+      onTap: () async {
+        setState(() => _defaultRetentionPolicy = value);
+        await _prefs.setString('default_retention_policy', value);
+      },
+      contentPadding: EdgeInsets.zero,
+      dense: true,
     );
   }
 
