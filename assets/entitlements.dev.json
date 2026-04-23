@@ -1,0 +1,9 @@
+{
+  "$schema": "Kraken development entitlements — local testing only, never shipped",
+  "description": "This file grants paid-tier access to spokes during development. It is ignored in release builds.",
+  "unlocked_spokes": [
+    "com.kraken.meeting_notes",
+    "com.kraken.documents",
+    "com.kraken.quick_capture"
+  ]
+}

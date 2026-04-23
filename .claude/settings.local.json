@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/apete/**)",
+      "Read(//c/Users/apete/.config/**)"
+    ]
+  }
+}
