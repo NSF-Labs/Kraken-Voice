@@ -43,3 +43,28 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Signing credentials — NEVER commit these
+android/key.properties
+*.jks
+*.keystore
+
+# Local IDE / agent settings
+.claude/settings.local.json
+
+# Android / probe build outputs
+/android/build/
+spike/**/build/
+spike/**/.gradle/
+spike/**/runs/
+
+# Large local diarization/audio exports (not source)
+comprehensive_exports/
+diarization_exports_v2/
+integration_test/test_audio/Mom.m4a
+
+# Qualcomm QNN proprietary binaries (do not publish)
+**/libQnn*.so
+**/jniLibs/**/libQnn*.so
+spike/**/assets/qnn/
+spike/**/local.properties

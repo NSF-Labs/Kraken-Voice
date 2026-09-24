@@ -1,17 +1,20 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
-import 'package:kraken_hub/kernel/kernel.dart';
-import 'package:kraken_hub/kernel/voice_input/faster_whisper_voice_input.dart';
+import 'package:krak_en_voice/kernel/kernel.dart';
+import 'package:krak_en_voice/kernel/voice_input/faster_whisper_voice_input.dart';
 
 class MockAudioEngine implements AudioEngine {
+  String audioPath = '';
   bool isRecording = false;
   int stopCalledCount = 0;
   bool shouldThrowOnTranscribe = false;
 
   @override
   Future<String?> startRecording({bool detectSilence = false}) async {
-    isRecording = true;
-    return 'mock_path.m4a';
+    // Silence detection returns only after native capture has stopped.
+    isRecording = !detectSilence;
+    return audioPath;
   }
 
   @override
@@ -49,25 +52,46 @@ class MockAudioEngine implements AudioEngine {
 
   @override
   Future<Duration> getDuration(String audioPath) async => Duration.zero;
+
+  @override
+  Future<void> cleanupStaleState() async {}
+
+  @override
+  VoidCallback? onNotificationStop;
+
+  @override
+  VoidCallback? onNotificationPause;
 }
 
 void main() {
   group('Retention Policy Tests', () {
     late MockAudioEngine mockAudioEngine;
     late FasterWhisperVoiceInput voiceInput;
+    late Directory tempDir;
+    late File audio;
 
-    setUp(() {
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('voice_retention_');
+      audio = await File('${tempDir.path}/utterance.m4a').writeAsBytes([1, 2, 3]);
       mockAudioEngine = MockAudioEngine();
-      voiceInput = FasterWhisperVoiceInput(mockAudioEngine);
+      mockAudioEngine.audioPath = audio.path;
+      voiceInput = FasterWhisperVoiceInput(
+        mockAudioEngine,
+        transcribeFile: mockAudioEngine.transcribe,
+      );
     });
 
-    test('Audio file deletion (via stopRecording) occurs after successful transcription', () async {
-      await voiceInput.transcribeUtterance(maxDuration: const Duration(milliseconds: 10));
-      expect(mockAudioEngine.stopCalledCount, 1);
+    tearDown(() async => tempDir.delete(recursive: true));
+
+    test('Temporary utterance audio is deleted after successful transcription', () async {
+      final text = await voiceInput.transcribeUtterance(maxDuration: const Duration(milliseconds: 10));
+      expect(text, 'Mock transcribed text');
+      expect(await audio.exists(), false);
+      expect(mockAudioEngine.stopCalledCount, 0);
       expect(mockAudioEngine.isRecording, false);
     });
 
-    test('Audio file deletion (via stopRecording) occurs even if transcription throws', () async {
+    test('Temporary utterance audio is deleted when transcription throws', () async {
       mockAudioEngine.shouldThrowOnTranscribe = true;
       try {
         await voiceInput.transcribeUtterance(maxDuration: const Duration(milliseconds: 10));
@@ -75,7 +99,8 @@ void main() {
       } catch (e) {
         expect(e, isA<VoiceInputError>());
       }
-      expect(mockAudioEngine.stopCalledCount, 1);
+      expect(await audio.exists(), false);
+      expect(mockAudioEngine.stopCalledCount, 0);
       expect(mockAudioEngine.isRecording, false);
     });
   });

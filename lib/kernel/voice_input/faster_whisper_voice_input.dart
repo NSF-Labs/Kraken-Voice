@@ -1,13 +1,20 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../audio/audio_channel.dart';
+import '../audio/transcription_engine.dart';
 import 'voice_input_service.dart';
 
 class FasterWhisperVoiceInput implements VoiceInputService {
   final AudioEngine _audioEngine;
   bool _isRecording = false;
 
-  FasterWhisperVoiceInput(this._audioEngine);
+  final Future<String> Function(String) _transcribeFile;
+
+  FasterWhisperVoiceInput(
+    this._audioEngine, {
+    Future<String> Function(String)? transcribeFile,
+  }) : _transcribeFile = transcribeFile ?? TranscriptionEngine().transcribeFile;
 
   bool isEnabled = true;
 
@@ -25,8 +32,15 @@ class FasterWhisperVoiceInput implements VoiceInputService {
 
       if (audioPath == null) throw VoiceInputError.transcriptionFailed;
 
-      final text = await _audioEngine.transcribe(audioPath);
+      // Use the real Whisper engine via TranscriptionEngine instead of the
+      // native channel stub. This is the same engine used by Meeting Notes.
+      final text = await _transcribeFile(audioPath);
+      if (text == 'Transcription failed.') {
+        throw VoiceInputError.transcriptionFailed;
+      }
       return text;
+    } on VoiceInputError {
+      rethrow;
     } on Exception catch (_) {
       throw VoiceInputError.transcriptionFailed;
     } finally {
@@ -67,6 +81,7 @@ class FasterWhisperVoiceInput implements VoiceInputService {
         const TranscriptionErrorEvent(VoiceInputError.micHardwareUnavailable),
       );
       _liveStreamController?.close();
+      return null;
     });
 
     return _liveStreamController!.stream;
@@ -84,11 +99,20 @@ class FasterWhisperVoiceInput implements VoiceInputService {
             const TranscriptionErrorEvent(VoiceInputError.transcriptionFailed),
           );
         } else {
-          final text = await _audioEngine.transcribe(path);
-          _liveStreamController?.add(TranscriptionFinal(text, Duration.zero));
+          // Use the real Whisper engine via TranscriptionEngine
+          debugPrint('[VoiceInput] Transcribing live capture: $path');
+          final text = await _transcribeFile(path);
+          if (text == 'Transcription failed.') {
+            _liveStreamController?.add(
+              const TranscriptionErrorEvent(VoiceInputError.transcriptionFailed),
+            );
+          } else {
+            _liveStreamController?.add(TranscriptionFinal(text, Duration.zero));
+          }
           _deleteTempFile(path);
         }
       } catch (e) {
+        debugPrint('[VoiceInput] Transcription error: $e');
         _liveStreamController?.add(
           const TranscriptionErrorEvent(VoiceInputError.transcriptionFailed),
         );

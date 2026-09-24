@@ -1,4 +1,14 @@
 pluginManagement {
+    val gpuBuild = providers.gradleProperty("dart-defines").orNull.orEmpty()
+        .split(",").filter { it.isNotBlank() }
+        .map { String(java.util.Base64.getDecoder().decode(it)) }
+        .contains("KRAKEN_S24_GPU=true")
+    resolutionStrategy {
+        eachPlugin {
+            if (gpuBuild && requested.id.id == "org.jetbrains.kotlin.android") useVersion("2.4.20")
+        }
+    }
+
     val flutterSdkPath =
         run {
             val properties = java.util.Properties()

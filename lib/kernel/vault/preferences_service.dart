@@ -49,6 +49,21 @@ class PreferencesService {
     await prefs.setString(key, value);
   }
 
+  Future<List<String>?> getStringList(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(key);
+  }
+
+  Future<void> setStringList(String key, List<String> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(key, value);
+  }
+
+  Future<double> getDouble(String key, {required double defaultValue}) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(key) ?? defaultValue;
+  }
+
   /// Get an integer preference.
   Future<int?> getInt(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -102,4 +117,36 @@ class PreferencesService {
 
   Future<void> setBrandColor(String hex) async =>
       setString('brand_color', hex);
+
+  // ─── Mic Sensitivity ──────────────────────────────────────────────────────
+
+  /// Microphone sensitivity multiplier (0.25 = low, 1.0 = default, 2.0 = high).
+  Future<double> getMicSensitivity() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('mic_sensitivity') ?? 1.0;
+  }
+
+  Future<void> setMicSensitivity(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('mic_sensitivity', value);
+  }
+
+  // ─── Transcript Break Threshold ────────────────────────────────────────────
+
+  /// Controls how aggressively line/paragraph breaks are inserted when
+  /// reformatting a Whisper transcript.
+  ///
+  /// **Gap-based**: Gap ≥ threshold → line break; Gap ≥ 3× → paragraph.
+  /// **Elapsed-time**: Elapsed ≥ 10× → line break; ≥ 30× → paragraph.
+  ///
+  /// Default: 0.2s. Range: 0.1–5.0s.
+  Future<double> getBreakThreshold() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('break_threshold') ?? 0.2;
+  }
+
+  Future<void> setBreakThreshold(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('break_threshold', value);
+  }
 }

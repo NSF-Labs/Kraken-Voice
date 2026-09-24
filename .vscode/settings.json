@@ -1,3 +1,5 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "dart.flutterSdkPath": "/opt/homebrew/share/flutter",
+    "dart.sdkPath": "/opt/homebrew/share/flutter/bin/cache/dart-sdk"
 }

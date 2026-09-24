@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "gemma4-e2b",
+    "family": "llm",
+    "dsp_arch": "v81",
+    "tokenizer_pre": "gemma"
+  },
+  "chat": {
+    "bos": [
+      2
+    ],
+    "user": {
+      "prefix": [
+        105,
+        2364,
+        107
+      ],
+      "suffix": [
+        106,
+        107
+      ]
+    },
+    "assistant": {
+      "prefix": [
+        105,
+        4368,
+        107
+      ],
+      "suffix": [
+        106,
+        107
+      ]
+    }
+  },
+  "params": {
+    "hidden": 1536,
+    "vocab": 262144,
+    "n_layers": 35,
+    "max_ctx": 512,
+    "head_dim": 256,
+    "eos_token_id": 1
+  },
+  "artifacts": {
+    "contexts": {
+      "decode": {
+        "bin": "gemma4_dec_i8.bin"
+      },
+      "lmhead": {
+        "bin": "gemma4_lmhead_f16.bin"
+      }
+    },
+    "embed": "gemma4_embed_f16.bin",
+    "tokenizer": "tokenizer.json",
+    "ple_table": "gemma4_ple_table_f16.bin",
+    "ple_proj": "gemma4_ple_projw_f16.bin",
+    "ple_norm": "gemma4_ple_norm_f16.bin",
+    "rope_inv_s": "gemma4_rope_inv_s.bin",
+    "rope_inv_f": "gemma4_rope_inv_f.bin"
+  },
+  "plan": {
+    "steps": [
+      {
+        "host": "gemma_generate",
+        "params": {
+          "decode": "gemma4_dec",
+          "lmhead": "gemma4_lmhead_f16",
+          "max_new": 48,
+          "neg": -50000,
+          "eos": 1,
+          "eot": 106
+        }
+      }
+    ]
+  }
+}

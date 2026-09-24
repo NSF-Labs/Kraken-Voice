@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kraken_hub/kernel/kernel.dart';
+import 'package:krak_en_voice/kernel/kernel.dart';
 
 class MockVoiceInputService implements VoiceInputService {
   bool isEnabled = true;

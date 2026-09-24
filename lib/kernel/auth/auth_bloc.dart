@@ -1,13 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:kraken_hub/kernel/vault/vault_service.dart';
-import 'package:kraken_hub/kernel/audio/transcription_engine.dart';
-import 'package:kraken_hub/kernel/retention/retention_service.dart';
-import 'package:kraken_hub/kernel/auth/auth_event.dart';
-import 'package:kraken_hub/kernel/auth/auth_state.dart';
-import 'package:kraken_hub/kernel/auth/key_derivation.dart';
-import 'package:kraken_hub/kernel/auth/secure_keystore.dart';
+import 'package:krak_en_voice/kernel/vault/vault_service.dart';
+import 'package:krak_en_voice/kernel/audio/transcription_engine.dart';
+import 'package:krak_en_voice/kernel/audio/recording_recovery_service.dart';
+import 'package:krak_en_voice/kernel/retention/retention_service.dart';
+import 'package:krak_en_voice/kernel/auth/auth_event.dart';
+import 'package:krak_en_voice/kernel/auth/auth_state.dart';
+import 'package:krak_en_voice/kernel/auth/key_derivation.dart';
+import 'package:krak_en_voice/kernel/auth/secure_keystore.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final VaultService _vaultService;
@@ -72,9 +73,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _secureKeyStore.cacheDerivedKey(derivedKey);
       }
 
+      await RecordingRecoveryService(_vaultService).migrateLegacyCacheRecordings();
       TranscriptionEngine().startWorker(_vaultService);
-      // Fire retention sweep (non-blocking)
+      // Fire retention sweep (non-blocking) + start daily scheduler
       _retentionService?.runSweep();
+      _retentionService?.startDailySweep();
       emit(AuthUnlocked());
     } catch (e) {
       emit(AuthError('Failed to unlock vault. Incorrect passphrase?'));
@@ -92,7 +95,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Unlock Kraken Hub',
+        localizedReason: 'Unlock Krak-EN Voice',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
@@ -115,9 +118,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
 
       await _vaultService.openVault(derivedKey);
+      await RecordingRecoveryService(_vaultService).migrateLegacyCacheRecordings();
       TranscriptionEngine().startWorker(_vaultService);
-      // Fire retention sweep (non-blocking)
+      // Fire retention sweep (non-blocking) + start daily scheduler
       _retentionService?.runSweep();
+      _retentionService?.startDailySweep();
       emit(AuthUnlocked());
     } catch (e) {
       emit(AuthError('Failed to unlock vault using biometrics.'));
@@ -130,6 +135,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     TranscriptionEngine().stopWorker();
+    _retentionService?.stopDailySweep();
     await _vaultService.closeVault();
 
     final cachedKey = await _secureKeyStore.getCachedDerivedKey();

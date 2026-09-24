@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kraken_hub/kernel/kernel.dart';
+import 'package:krak_en_voice/kernel/kernel.dart';
 
 void main() {
   group('KeyDerivation', () {

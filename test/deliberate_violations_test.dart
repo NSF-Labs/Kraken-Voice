@@ -1,19 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'support/architecture_rules.dart';
 
 // These tests prove that our architectural regex rules correctly identify violations.
 void main() {
   group('Deliberate Violations Regex Tests', () {
     
-    test('Catches Flutter import in kernel', () {
-      const badCode = "import 'package:flutter/material.dart';";
-      final hasFlutterImport = RegExp(r"import\s+['""]package:flutter/").hasMatch(badCode);
-      expect(hasFlutterImport, isTrue);
-    });
-
-    test('Catches spoke-to-spoke imports', () {
-      const badCode = "import 'package:kraken_hub/spokes/notes/notes_spoke.dart';";
-      final importsOtherSpoke = RegExp(r"import\s+['""]package:kraken_hub/spokes/").hasMatch(badCode);
-      expect(importsOtherSpoke, isTrue);
+    test('Allows foundation/services but rejects Flutter UI in kernel', () {
+      for (final library in ['material', 'widgets', 'cupertino', 'rendering']) {
+        expect(importsFlutterUi("import 'package:flutter/$library.dart';"), isTrue);
+        expect(importsFlutterUi("export 'package:flutter/$library.dart';"), isTrue);
+      }
+      for (final library in ['foundation', 'services']) {
+        expect(importsFlutterUi("import 'package:flutter/$library.dart';"), isFalse);
+      }
+      expect(importsFlutterUi("import 'package:flutter/services/other.dart';"), isTrue);
     });
 
     test('Catches direct persistence outside vault', () {
@@ -24,11 +24,6 @@ void main() {
       
       final hasFile = RegExp(r'\bFile\(').hasMatch(badCode2);
       expect(hasFile, isTrue);
-    });
-
-    test('Catches Shell-only WorkspaceService methods', () {
-      const badCode = "await workspaceService.deleteDocument('doc_id');";
-      expect(badCode.contains('deleteDocument'), isTrue);
     });
 
     test('Catches Platform channels outside kernel', () {
@@ -45,15 +40,17 @@ void main() {
       expect(hasHttpClient, isTrue);
     });
 
-    test('Catches writes to workspace_access.can_write = true', () {
-      const badCode1 = "can_write: true";
-      const badCode2 = "canWrite = true;";
-      
-      final hasWriteTrue1 = RegExp(r'can_write\s*:\s*true|canWrite\s*=\s*true', caseSensitive: false).hasMatch(badCode1);
-      final hasWriteTrue2 = RegExp(r'can_write\s*:\s*true|canWrite\s*=\s*true', caseSensitive: false).hasMatch(badCode2);
-      
-      expect(hasWriteTrue1, isTrue);
-      expect(hasWriteTrue2, isTrue);
+    test('Catches legacy shell/spokes imports', () {
+      const badCode1 = "import 'package:krak_en_voice/shell/ui/dashboard.dart';";
+      const badCode2 = "import 'package:krak_en_voice/spokes/notes/spoke.dart';";
+
+      final regex = RegExp(r"import\s+['""].*(?:shell|spokes)/");
+      expect(regex.hasMatch(badCode1), isTrue);
+      expect(regex.hasMatch(badCode2), isTrue);
+
+      // New-style imports should NOT match
+      const goodCode = "import 'package:krak_en_voice/screens/dashboard_screen.dart';";
+      expect(regex.hasMatch(goodCode), isFalse);
     });
   });
 }

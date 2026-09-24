@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'local_inference_service.dart';
@@ -61,7 +60,6 @@ class InferenceError extends InferenceState {
 // --- BLoC ---
 class InferenceBloc extends Bloc<InferenceEvent, InferenceState> {
   final LocalInferenceService _service;
-  StreamSubscription<InferenceToken>? _streamSub;
 
   InferenceBloc(this._service) : super(InferenceUninitialized()) {
     on<InferenceLoadRequested>(_onLoad);

@@ -21,13 +21,40 @@ class VaultService {
     _db = await openDatabase(
       dbPath,
       password: hexKey,
-      version: 11,
+      version: 21,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
+  Future<void> _createImportedDocuments(Database db) async {
+    await db.execute('''
+      CREATE TABLE imported_documents (
+        id TEXT PRIMARY KEY,
+        folder_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        file_type TEXT NOT NULL,
+        extracted_text TEXT NOT NULL,
+        extraction_warning TEXT NOT NULL DEFAULT '',
+        summary_text TEXT,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_imported_documents_folder ON imported_documents(folder_id)',
+    );
+  }
+
+  Future<void> _createSummaryDrafts(Database db) async {
+    await db.execute(
+      'CREATE TABLE summary_drafts (owner_key TEXT PRIMARY KEY, text TEXT NOT NULL, updated_at INTEGER NOT NULL)',
+    );
+  }
+
   Future<void> _onCreate(Database db, int version) async {
+    await _createSummaryDrafts(db);
+    await _createImportedDocuments(db);
     await db.execute('''
       CREATE TABLE entities (
         id TEXT PRIMARY KEY,
@@ -101,7 +128,11 @@ class VaultService {
         started_at INTEGER,
         completed_at INTEGER,
         transcription_text TEXT,
-        summary_json TEXT
+        transcription_segments_json TEXT,
+        summary_json TEXT,
+        user_corrected INTEGER NOT NULL DEFAULT 0,
+        language TEXT DEFAULT 'en',
+        retry_count INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''
@@ -125,6 +156,9 @@ class VaultService {
         retention_policy TEXT NOT NULL DEFAULT '90_day',
         audio_deleted_at INTEGER,
         audio_deleted_reason TEXT,
+        last_access INTEGER,
+        is_trashed INTEGER NOT NULL DEFAULT 0,
+        trashed_at INTEGER,
         FOREIGN KEY(folder_id) REFERENCES folders(id)
       )
     ''');
@@ -152,8 +186,12 @@ class VaultService {
         FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
       )
     ''');
-    await db.execute('CREATE INDEX idx_recording_tags_recording ON recording_tags(recording_id)');
-    await db.execute('CREATE INDEX idx_recording_tags_tag ON recording_tags(tag)');
+    await db.execute(
+      'CREATE INDEX idx_recording_tags_recording ON recording_tags(recording_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_recording_tags_tag ON recording_tags(tag)',
+    );
     await db.execute('''
       CREATE TABLE action_items (
         id TEXT PRIMARY KEY,
@@ -164,10 +202,55 @@ class VaultService {
         FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
       )
     ''');
-    await db.execute('CREATE INDEX idx_action_items_recording ON action_items(recording_id)');
+    await db.execute(
+      'CREATE INDEX idx_action_items_recording ON action_items(recording_id)',
+    );
+    // Diarization v1: persist diarization results per recording
+    await db.execute('''
+      CREATE TABLE diarization_results (
+        recording_id TEXT PRIMARY KEY,
+        threshold REAL NOT NULL,
+        min_duration REAL NOT NULL,
+        speaker_count INTEGER NOT NULL,
+        segments_json TEXT NOT NULL,
+        embeddings_path TEXT,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+      )
+    ''');
+    // Diarization v1: speaker display names (user-renameable)
+    await db.execute('''
+      CREATE TABLE speaker_labels (
+        id TEXT PRIMARY KEY,
+        recording_id TEXT NOT NULL,
+        speaker_index INTEGER NOT NULL,
+        display_name TEXT NOT NULL,
+        is_user_renamed INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_speaker_labels_recording ON speaker_labels(recording_id)',
+    );
+    // Chat conversations per recording
+    await db.execute('''
+      CREATE TABLE recording_chats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recording_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_recording_chats_recording ON recording_chats(recording_id)',
+    );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 21) await _createSummaryDrafts(db);
+    if (oldVersion < 20) await _createImportedDocuments(db);
     if (oldVersion < 2) {
       await db.execute(
         'ALTER TABLE audit_log ADD COLUMN event_category TEXT DEFAULT "system"',
@@ -221,9 +304,7 @@ class VaultService {
       });
     }
     if (oldVersion < 6) {
-      await db.execute(
-        "ALTER TABLE recordings ADD COLUMN source TEXT",
-      );
+      await db.execute("ALTER TABLE recordings ADD COLUMN source TEXT");
     }
     if (oldVersion < 7) {
       await db.execute('''
@@ -245,8 +326,12 @@ class VaultService {
           FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
         )
       ''');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_recording_tags_recording ON recording_tags(recording_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_recording_tags_tag ON recording_tags(tag)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_recording_tags_recording ON recording_tags(recording_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_recording_tags_tag ON recording_tags(tag)',
+      );
     }
     if (oldVersion < 9) {
       await db.execute('''
@@ -259,17 +344,120 @@ class VaultService {
           FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
         )
       ''');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_action_items_recording ON action_items(recording_id)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_action_items_recording ON action_items(recording_id)',
+      );
     }
     if (oldVersion < 10) {
-      await db.execute("ALTER TABLE recordings ADD COLUMN retention_policy TEXT NOT NULL DEFAULT '90_day'");
-      await db.execute("ALTER TABLE recordings ADD COLUMN audio_deleted_at INTEGER");
-      await db.execute("ALTER TABLE recordings ADD COLUMN audio_deleted_reason TEXT");
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN retention_policy TEXT NOT NULL DEFAULT '90_day'",
+      );
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN audio_deleted_at INTEGER",
+      );
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN audio_deleted_reason TEXT",
+      );
     }
     if (oldVersion < 11) {
-      await db.execute("ALTER TABLE recordings ADD COLUMN meeting_date INTEGER");
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN meeting_date INTEGER",
+      );
       // Backfill: set meeting_date = created_at for existing recordings
-      await db.execute("UPDATE recordings SET meeting_date = created_at WHERE meeting_date IS NULL");
+      await db.execute(
+        "UPDATE recordings SET meeting_date = created_at WHERE meeting_date IS NULL",
+      );
+    }
+    if (oldVersion < 12) {
+      // H3-06: Track last_access timestamp for retention LRU ordering
+      await db.execute("ALTER TABLE recordings ADD COLUMN last_access INTEGER");
+      // Backfill: set last_access = created_at for existing recordings
+      await db.execute(
+        "UPDATE recordings SET last_access = created_at WHERE last_access IS NULL",
+      );
+    }
+    if (oldVersion < 13) {
+      // H1-31: Track user-corrected transcripts
+      await db.execute(
+        "ALTER TABLE transcription_jobs ADD COLUMN user_corrected INTEGER NOT NULL DEFAULT 0",
+      );
+    }
+    if (oldVersion < 14) {
+      // 2A-06: Language tracking per transcription job
+      await db.execute(
+        "ALTER TABLE transcription_jobs ADD COLUMN language TEXT DEFAULT 'en'",
+      );
+      // 2A-08: Per-recording language override
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN language_override TEXT",
+      );
+    }
+    if (oldVersion < 15) {
+      // Diarization v1: persist diarization results per recording
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS diarization_results (
+          recording_id TEXT PRIMARY KEY,
+          threshold REAL NOT NULL,
+          min_duration REAL NOT NULL,
+          speaker_count INTEGER NOT NULL,
+          segments_json TEXT NOT NULL,
+          embeddings_path TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+        )
+      ''');
+      // Diarization v1: speaker display names (user-renameable)
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS speaker_labels (
+          id TEXT PRIMARY KEY,
+          recording_id TEXT NOT NULL,
+          speaker_index INTEGER NOT NULL,
+          display_name TEXT NOT NULL,
+          is_user_renamed INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_speaker_labels_recording ON speaker_labels(recording_id)',
+      );
+    }
+    if (oldVersion < 16) {
+      // Persist Whisper per-segment timestamps so speaker labels can be
+      // aligned by audio-time instead of by character position in the
+      // flat text. (Old recordings without segments fall back to the
+      // proportional-character mapping path.)
+      await db.execute(
+        "ALTER TABLE transcription_jobs ADD COLUMN transcription_segments_json TEXT",
+      );
+    }
+    if (oldVersion < 17) {
+      // Trash system: soft-delete with 30-day TTL
+      await db.execute(
+        "ALTER TABLE recordings ADD COLUMN is_trashed INTEGER NOT NULL DEFAULT 0",
+      );
+      await db.execute("ALTER TABLE recordings ADD COLUMN trashed_at INTEGER");
+    }
+    if (oldVersion < 18) {
+      // Job queue: retry tracking
+      await db.execute(
+        "ALTER TABLE transcription_jobs ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0",
+      );
+    }
+    if (oldVersion < 19) {
+      // Chat conversations per recording — persist AI chat history
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS recording_chats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          recording_id TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_recording_chats_recording ON recording_chats(recording_id)',
+      );
     }
   }
 

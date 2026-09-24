@@ -1,25 +1,30 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:kraken_hub/kernel/kernel.dart';
-import 'package:kraken_hub/kernel/voice_input/faster_whisper_voice_input.dart';
-import 'package:kraken_hub/kernel/notifications/kraken_notification_service.dart';
-import 'package:kraken_hub/shell/app/app.dart';
-import 'package:kraken_hub/shell/app/app_lifecycle_bloc.dart';
-import 'package:kraken_hub/spokes/mock/mock_spoke.dart';
-import 'package:kraken_hub/spokes/meeting_notes/meeting_notes_spoke.dart';
-import 'package:kraken_hub/spokes/meeting_notes/data/kraken_export_service.dart';
+import 'package:krak_en_voice/kernel/kernel.dart';
+import 'package:krak_en_voice/kernel/voice_input/faster_whisper_voice_input.dart';
+import 'package:krak_en_voice/kernel/notifications/kraken_notification_service.dart';
+import 'package:krak_en_voice/app/app.dart';
+import 'package:krak_en_voice/app/app_lifecycle_bloc.dart';
+import 'package:krak_en_voice/data/export_service.dart';
+
+import 'package:krak_en_voice/kernel/audio/audio_device_service.dart';
+import 'package:krak_en_voice/kernel/device_support.dart';
+import 'package:krak_en_voice/app/unsupported_device_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (!await DeviceSupport.isSupported()) {
+    runApp(const UnsupportedDeviceApp());
+    return;
+  }
 
   // Clean up stale export temp files from previous session
   KrakenExportService.cleanupTempExports();
 
   final secureKeyStore = FlutterSecureKeyStore();
   final vaultService = VaultService();
-  final workspaceService = WorkspaceService(vaultService);
   final localAuth = LocalAuthentication();
   final inferenceService = LocalInferenceService();
   final audioEngine = AudioEngine();
@@ -29,7 +34,6 @@ void main() async {
     audio: audioEngine,
     inference: inferenceService,
     vault: vaultService,
-    workspace: workspaceService,
     export: ExportService(),
     search: SearchIndex(),
     voiceInput: voiceInputService,
@@ -42,12 +46,17 @@ void main() async {
   // Initialize system notifications
   await KrakenNotificationService().initialize();
 
+  // Kill any orphaned recording service from a previous session
+  await audioEngine.cleanupStaleState();
+
+  // Initialize audio device enumeration (mic selection)
+  await AudioDeviceService().initialize();
+
   runApp(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: secureKeyStore),
         RepositoryProvider.value(value: vaultService),
-        RepositoryProvider.value(value: workspaceService),
         RepositoryProvider.value(value: localAuth),
         RepositoryProvider.value(value: inferenceService),
         RepositoryProvider.value(value: audioEngine),
@@ -66,15 +75,6 @@ void main() async {
               retentionService: retentionService,
             )..add(AuthStarted()),
           ),
-          BlocProvider(
-            create: (context) {
-              final bloc = SpokeRegistryBloc();
-              if (kDebugMode) {
-                bloc.add(RegisterSpoke(MeetingNotesSpoke()));
-              }
-              return bloc;
-            },
-          ),
           BlocProvider(create: (context) => InferenceBloc(inferenceService)),
           BlocProvider(create: (context) => VoiceInputBloc(voiceInputService)),
           BlocProvider(
@@ -83,7 +83,7 @@ void main() async {
                   ..add(AppLifecycleStarted()),
           ),
         ],
-        child: const KrakenHubApp(),
+        child: const KrakEnVoiceApp(),
       ),
     ),
   );

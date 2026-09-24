@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Reproducible pinned runtime; see scripts/prepare_hexagon_runtime.py
+/app/src/main/jniLibs/

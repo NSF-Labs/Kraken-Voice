@@ -1,8 +1,8 @@
-name: kraken_hub
-description: "A new Flutter project."
+name: krak_en_voice
+description: "Private, on-device meeting recorder with AI transcription and summaries."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.14-npu-sm8850+14
 
 environment:
   sdk: ^3.11.4
@@ -51,6 +51,7 @@ dependencies:
   google_fonts: ^6.2.1
   whisper_ggml_plus: ^1.5.2
   whisper_ggml_plus_ffmpeg: ^1.0.0
+  ffmpeg_kit_flutter_new_min: ^3.1.0
   just_audio: ^0.9.42
   share_plus: ^10.1.4
   receive_sharing_intent: ^1.8.1
@@ -59,9 +60,19 @@ dependencies:
   pdf: ^3.12.0
   image_picker: ^1.2.1
   permission_handler: ^12.0.1
+  sherpa_onnx: ^1.12.40
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.3.0
+  eventide: ^2.2.0
+  timezone: ^0.11.0
+  intl: any
+  in_app_purchase: ^3.2.0
 
 dev_dependencies:
+  flutter_skill: ^0.2.6
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -70,13 +81,13 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -112,3 +123,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/electric_kraken.png"
+  adaptive_icon_background: "#0D0D1A"
+  adaptive_icon_foreground: "assets/images/electric_kraken.png"

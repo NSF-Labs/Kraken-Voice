@@ -42,6 +42,27 @@ class AudioEngine {
     });
   }
 
+  /// Force-stop any orphaned native recording service and reset Dart state.
+  /// Call once during app startup to clean up after crashes / hot-reloads.
+  Future<void> cleanupStaleState() async {
+    if (recordingState.value != AudioRecordingState.idle) {
+      debugPrint('[AudioEngine] Resetting stale state: ${recordingState.value}');
+      _timer?.cancel();
+      _timer = null;
+      recordingState.value = AudioRecordingState.idle;
+      recordingDuration.value = Duration.zero;
+      currentFilePath = null;
+    }
+    // Send a stop command to the native side in case the service is still
+    // running from a previous session. This is idempotent — if the service
+    // isn't running, the intent is simply ignored.
+    try {
+      await _channel.invokeMethod('stopRecording');
+    } catch (_) {
+      // Service wasn't running — expected, ignore.
+    }
+  }
+
   Stream<double> get amplitudeStream {
     _amplitudeStream ??= _amplitudeEventChannel
         .receiveBroadcastStream()
@@ -122,7 +143,7 @@ class AudioEngine {
         'path': audioPath,
       });
       return Duration(milliseconds: durationMs ?? 0);
-    } on PlatformException catch (e) {
+    } on PlatformException catch (_) {
       return Duration.zero;
     }
   }
