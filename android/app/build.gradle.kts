@@ -16,6 +16,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
+    buildFeatures { buildConfig = true }
     namespace = "org.krak_en.voice"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -58,6 +59,11 @@ android {
 
     flavorDimensions += "env"
     productFlavors {
+        create("qualification") {
+            dimension = "env"
+            applicationIdSuffix = ".qualification"
+            resValue("string", "app_name", "Krak-EN Hardware Test")
+        }
         create("dev") {
             dimension = "env"
             applicationIdSuffix = ".dev"

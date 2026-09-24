@@ -1,5 +1,10 @@
 # Krak-EN Voice
 
+For internal real-device/emulator testing, see
+[Hardware Qualification](HARDWARE_QUALIFICATION.md). Build the separate test app
+with `sh scripts/build_qualification.sh`; its ADB runner also works with devices
+connected through Android Device Streaming.
+
 Current build: **1.0.16+16**, one Android app with automatic GPU/NPU model selection.
 See [unified build and validation](UNIFIED_RELEASE.md) for supported devices,
 remaining release checks, build commands and signing-key recovery.

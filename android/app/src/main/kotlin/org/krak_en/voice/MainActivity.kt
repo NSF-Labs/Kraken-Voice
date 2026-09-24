@@ -155,6 +155,47 @@ class MainActivity: FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, INFERENCE_CHANNEL)
             .setMethodCallHandler(inferenceBridge::handle)
 
+        if (BuildConfig.FLAVOR == "qualification") {
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kraken.kernel/qualification")
+                .setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "launchOptions" -> result.success(mapOf(
+                            "mode" to intent.getStringExtra("qualification_test"),
+                            "backend" to intent.getStringExtra("qualification_backend")))
+                        "keepAwake" -> {
+                            if (call.argument<Boolean>("enabled") == true)
+                                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                            else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                            result.success(null)
+                        }
+                        "snapshot" -> result.success(HardwareQualification.snapshot(applicationContext) +
+                            mapOf("inference" to inferenceBridge.diagnostics()))
+                        "select" -> {
+                            val profile = when (call.argument<String>("backend")) {
+                                "GPU" -> ReleaseHardware.Profile.GPU
+                                "NPU" -> ReleaseHardware.Profile.NPU
+                                else -> null
+                            }
+                            if (profile == null || ReleaseHardware.isEmulator() ||
+                                !ReleaseHardware.supportsCandidate(profile, Build.SOC_MODEL)) {
+                                result.error("UNSUPPORTED_CANDIDATE", "No packaged model/runtime for this backend and chipset", null)
+                            } else {
+                                // Caller waits for unload before requesting a switch.
+                                inferenceBridge.close()
+                                ReleaseHardware.qualificationBackend = profile
+                                inferenceBridge = InferenceBridgeFactory.create(applicationContext)
+                                EventChannel(flutterEngine.dartExecutor.binaryMessenger, INFERENCE_STREAM_CHANNEL)
+                                    .setStreamHandler(inferenceBridge)
+                                MethodChannel(flutterEngine.dartExecutor.binaryMessenger, INFERENCE_CHANNEL)
+                                    .setMethodCallHandler(inferenceBridge::handle)
+                                result.success(null)
+                            }
+                        }
+                        else -> result.notImplemented()
+                    }
+                }
+        }
+
         // Setup Audio Amplitude EventChannel
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, "kraken.kernel/audio/amplitude").setStreamHandler(
             object : EventChannel.StreamHandler {

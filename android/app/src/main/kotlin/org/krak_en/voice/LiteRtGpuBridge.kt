@@ -28,6 +28,13 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
     private var sink: EventChannel.EventSink? = null
     @Volatile private var busy = false
     @Volatile private var closed = false
+    @Volatile private var ready = false
+    @Volatile private var lastMetrics: Map<String, Any?> = emptyMap()
+    override fun diagnostics(): Map<String, Any?> = mapOf(
+        "initialized" to ready, "runtime" to "LiteRT-LM 0.17.1",
+        "requestedBackend" to "GPU", "backendEvidence" to if (ready) "Explicit Backend.GPU initialized" else "Not initialized",
+        "cpuOnlyFallback" to false, "perOperatorCpuUsage" to "Not measured",
+        "modelSha256" to MODEL_SHA, "metrics" to lastMetrics)
 
     private fun supported() = ReleaseHardware.isSupported(ReleaseHardware.Profile.GPU)
     // Kotlin 0.17.1 exposes no tokenizer. UTF-8 bytes conservatively bound the
@@ -40,6 +47,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
         synchronized(conversationLock) { active?.cancelProcess() }
     }
     override fun close() {
+        ready = false
         closed = true
         cancel()
         worker.execute { engine?.close(); engine = null; loadedPath = null }
@@ -81,7 +89,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
                                 if (next.isInitialized()) next.close()
                                 throw e
                             }
-                            engine = next; loadedPath = path
+                            engine = next; loadedPath = path; ready = true
                             Log.i(TAG, "READY runtime=LiteRT-LM-0.17.1 backend=GPU soc=${Build.SOC_MODEL} context=4096 no_cpu_fallback")
                         }
                         main.post { result.success(null) }
@@ -93,7 +101,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
                 cancel()
                 worker.execute {
                     try {
-                        if (call.method == "unloadModel") { engine?.close(); engine = null; loadedPath = null }
+                        if (call.method == "unloadModel") { engine?.close(); engine = null; loadedPath = null; ready = false; lastMetrics = emptyMap() }
                         main.post { result.success(null) }
                     } catch (e: Throwable) { main.post { result.error("ENGINE_ERROR", e.message, null) } }
                 }
@@ -142,6 +150,9 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
                             failure?.let { throw it }
                             if (generation.get() == id && !closed) {
                                 val metrics = conversation.getBenchmarkInfo()
+                                lastMetrics = mapOf("prefillTokens" to metrics.lastPrefillTokenCount,
+                                    "decodeTokens" to metrics.lastDecodeTokenCount,
+                                    "decodeTokensPerSecond" to metrics.lastDecodeTokensPerSecond)
                                 Log.i(TAG, "DONE prefill=${metrics.lastPrefillTokenCount} decode=${metrics.lastDecodeTokenCount} decode_tps=${metrics.lastDecodeTokensPerSecond}")
                                 check(metrics.lastDecodeTokenCount < limit) { "Response reached the GPU context/output limit. Any saved draft remains available." }
                             }

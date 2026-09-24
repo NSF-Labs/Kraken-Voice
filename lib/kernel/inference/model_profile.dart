@@ -41,7 +41,10 @@ abstract final class ModelProfile {
   }
 
   @visibleForTesting
-  static void resetForTest() {
+  static void resetForTest() => clearAfterUnload();
+
+  /// Internal qualification runner only: call after native unload completes.
+  static void clearAfterUnload() {
     _backend = null;
     _profile = null;
   }

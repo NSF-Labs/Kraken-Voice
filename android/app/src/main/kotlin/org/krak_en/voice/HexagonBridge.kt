@@ -16,7 +16,12 @@ class HexagonBridge(private val context: Context) : InferenceBridge {
     private val main = Handler(Looper.getMainLooper())
     private val generation = AtomicLong()
     private var sink: EventChannel.EventSink? = null
-    private var loadedPath: String? = null // worker thread only
+    @Volatile private var loadedPath: String? = null // written on worker, read by diagnostics
+    override fun diagnostics(): Map<String, Any?> = mapOf(
+        "initialized" to (loadedPath != null), "runtime" to "llama.cpp 0ef6e55",
+        "requestedBackend" to "NPU", "backendEvidence" to if (loadedPath != null) "HTP0 required and initialized" else "Not initialized",
+        "cpuOnlyFallback" to false, "perOperatorCpuUsage" to "CPU host work and unsupported operations remain",
+        "modelSha256" to MODEL_SHA)
     @Volatile private var busy = false
     @Volatile private var closed = false
     private var activeGeneration = 0L
@@ -45,6 +50,8 @@ class HexagonBridge(private val context: Context) : InferenceBridge {
         closed = true
         cancel()
         worker.execute { if (nativeLoaded) nativeUnload(); loadedPath = null }
+        // The executor is process-wide because JNI owns a process-wide model.
+        // Keep it alive when qualification switches/recreates a bridge.
     }
     private fun ensureNative() {
         if (!nativeLoaded) { System.loadLibrary("kraken_npu"); nativeLoaded = true }

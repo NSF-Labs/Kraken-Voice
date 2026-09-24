@@ -5,6 +5,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReleaseHardwareTest {
+    @Test fun qualificationCandidatesDoNotExpandProductionEligibility() {
+        assertTrue(ReleaseHardware.supportsCandidate(ReleaseHardware.Profile.GPU, "SM8750-AB"))
+        assertTrue(ReleaseHardware.supportsCandidate(ReleaseHardware.Profile.NPU, "SM8850"))
+        assertFalse(ReleaseHardware.supportsCandidate(ReleaseHardware.Profile.NPU, "SM8650"))
+        assertFalse(ReleaseHardware.supportsCandidate(ReleaseHardware.Profile.GPU, "SM6375"))
+        assertFalse(ReleaseHardware.supportsCandidate(ReleaseHardware.Profile.GPU, "SM9999"))
+        assertFalse(permits(ReleaseHardware.Profile.GPU, "unknown", "SM8750", manufacturer = "other"))
+    }
     private fun permits(profile: ReleaseHardware.Profile, model: String, soc: String,
                         manufacturer: String = "samsung", sdk: Int = 31,
                         abis: List<String> = listOf("arm64-v8a")) =
