@@ -64,3 +64,10 @@ is downloaded by the installed app; only the checksum-pinned GGUF weights.
 ## S24 GPU evaluation profile
 - `com.google.ai.edge.litertlm:litertlm-android:0.17.1`: local GPU inference only; selected only by `KRAKEN_S24_GPU=true`. No runtime network calls. Kotlin 2.4.20 is selected for this build to match the 2.4 library metadata.
 - Gemma 4 E2B GPU model: public download from the pinned `litert-community/gemma-4-E2B-it-litert-lm` revision `b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1`, checked by SHA-256 before loading.
+# Unified build 16
+
+The unified app includes the existing LiteRT-LM 0.17.1 GPU dependency alongside
+the pinned Hexagon runtime. Kotlin 2.4.20 now applies to the whole Android build.
+Added the publisher's `libggml-htp-v79.so` from the same pinned revision for S25;
+its size and SHA-256 are recorded in `runtime-artifacts.json`. Model weights and
+network endpoints are unchanged. See `UNIFIED_RELEASE.md` for test coverage.

@@ -54,13 +54,13 @@ class HexagonBridge(private val context: Context) : InferenceBridge {
             result.success(mapOf(
                 "supported" to ReleaseHardware.isSupported(),
                 "soc" to if (android.os.Build.VERSION.SDK_INT >= 31) android.os.Build.SOC_MODEL else "unknown",
-                "backend" to "NPU", "profile" to "gemma4-hexagon-v81",
+                "backend" to "NPU", "profile" to ReleaseHardware.npuProfile(),
                 "modelFilename" to "gemma4-e2b-w4.gguf",
-                "contextWindow" to 4096, "build" to "1.0.14-npu-sm8850+14"
+                "contextWindow" to 4096, "build" to ReleaseHardware.BUILD
             )); return
         }
         if (!ReleaseHardware.isSupported()) {
-            result.error("UNSUPPORTED_DEVICE", "This NPU build supports only Samsung SM-S948U with SM8850.", null); return
+            result.error("UNSUPPORTED_DEVICE", "This phone is not enabled for NPU inference.", null); return
         }
         if (closed) { result.error("ENGINE_CLOSED", "Inference engine is closed", null); return }
         when (call.method) {

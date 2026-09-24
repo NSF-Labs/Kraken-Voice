@@ -73,7 +73,7 @@ Java_org_krak_1en_voice_HexagonBridge_nativeLoad(JNIEnv *env, jobject, jbyteArra
         cp.type_k = GGML_TYPE_F16; cp.type_v = GGML_TYPE_F16;
         ctx = llama_init_from_model(model, cp);
         if (!ctx) throw std::runtime_error("Could not initialize the Hexagon context");
-        __android_log_write(ANDROID_LOG_INFO, "KrakenNPU", "READY profile=gemma4-hexagon-v81 backend=HTP0 context=4096 thinking=off");
+        __android_log_write(ANDROID_LOG_INFO, "KrakenNPU", "READY profile=gemma4-hexagon backend=HTP0 context=4096 thinking=off");
     } catch (const std::exception &e) { unload(); fail(env, e.what()); }
 }
 extern "C" JNIEXPORT void JNICALL

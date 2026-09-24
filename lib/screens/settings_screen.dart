@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import '../kernel/kernel.dart';
 import '../kernel/model_readiness_service.dart';
+import '../kernel/inference/model_profile.dart';
 import '../data/whisper_languages.dart';
 import '../kernel/audio/audio_device_service.dart';
 import '../design/tokens.dart';
@@ -635,7 +636,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           title: Text('Krak-EN Voice',
                               style: KrakenText.bodyMd()),
                           subtitle: Text(
-                            'v$_appVersion ($_buildNumber) — 100% on-device',
+                            'v$_appVersion — 100% on-device\n${ModelProfile.label}',
                             style: KrakenText.caption(
                                 color: KrakenColors.textSecondary),
                           ),

@@ -10,10 +10,15 @@ class ReleaseHardwareTest {
                         abis: List<String> = listOf("arm64-v8a")) =
         ReleaseHardware.supportsDevice(profile, manufacturer, model, soc, sdk, abis)
 
-    @Test fun permitsOnlyValidatedModelAndBackendPairs() {
+    @Test fun permitsOnlyEnabledModelAndBackendPairs() {
         val npu = ReleaseHardware.Profile.NPU
         val gpu = ReleaseHardware.Profile.GPU
         assertTrue(permits(npu, "SM-S948U", "SM8850"))
+        for (model in listOf("SM-S931U", "SM-S936U", "SM-S938U")) {
+            assertTrue(permits(npu, model, "SM8750-AB"))
+            assertFalse(permits(gpu, model, "SM8750"))
+            assertFalse(permits(npu, model, "SM8850"))
+        }
         assertTrue(permits(gpu, "SM-S928U", "SM8650-AC"))
         assertFalse(permits(npu, "SM-S928U", "SM8650"))
         assertFalse(permits(gpu, "SM-S948U", "SM8850"))

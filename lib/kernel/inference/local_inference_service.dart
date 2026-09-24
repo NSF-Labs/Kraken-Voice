@@ -94,17 +94,16 @@ class LocalInferenceService {
 
   /// Loads the model into memory.
   Future<void> loadModel({String? modelPath}) async {
-    final path = modelPath ?? await _resolveModelPath();
     try {
       final profile = await _channel.invokeMapMethod<String, dynamic>(
         'deviceSupport',
       );
-      if (profile?['modelFilename'] != ModelProfile.filename ||
-          profile?['build'] != ModelProfile.build) {
+      if (!ModelProfile.configure(profile)) {
         throw StateError(
           'The app and AI backend versions do not match. Reinstall the current build without clearing app data.',
         );
       }
+      final path = modelPath ?? await _resolveModelPath();
       debugPrint(
         '[Inference] Loading ${ModelProfile.filename} (${ModelProfile.build})',
       );

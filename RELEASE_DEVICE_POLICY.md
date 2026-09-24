@@ -1,3 +1,10 @@
+# Current policy: unified build 1.0.16+16
+
+The policy below describes historical NPU build 14. It is superseded by
+[the unified release policy](UNIFIED_RELEASE.md): a single APK/AAB selects the
+matching GPU or NPU profile; S25 device acceptance is pending. Google Play catalog
+exclusions remain a separate publishing step.
+
 # NPU release policy — 1.0.14-npu-sm8850+14
 
 This build replaces LiteRT-LM/GPU with **Gemma 4 E2B Q4_0 GGUF on llama.cpp Hexagon HTP0**, in-process through JNI. The NPU executes accelerated operations; CPU host work and unsupported individual operations remain. It is not an exclusively NPU execution claim.

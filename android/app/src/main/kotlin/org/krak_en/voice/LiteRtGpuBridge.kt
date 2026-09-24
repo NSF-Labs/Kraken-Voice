@@ -50,7 +50,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
             result.success(mapOf("supported" to supported(), "soc" to Build.SOC_MODEL,
                 "backend" to "GPU", "profile" to "gemma4-litert171-adreno750",
                 "modelFilename" to "gemma4-e2b-gpu.litertlm", "contextWindow" to 4096,
-                "build" to "1.0.15-gpu-sm8650+15", "tokenBudget" to "utf8-upper-bound"))
+                "build" to ReleaseHardware.BUILD, "tokenBudget" to "utf8-upper-bound"))
             return
         }
         if (closed) { result.error("ENGINE_CLOSED", "Inference engine is closed", null); return }

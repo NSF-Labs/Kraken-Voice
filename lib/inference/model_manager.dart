@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:krak_en_voice/kernel/model_storage_helper.dart';
 
 class ModelManager {
-  static const String modelFilename = ModelProfile.filename;
+  static String get modelFilename => ModelProfile.filename;
 
   /// Suffix for the temporary partial download file.
   static const String _partSuffix = '.part';
@@ -46,10 +46,12 @@ class ModelManager {
     final partFile = File(partPath);
 
     for (int attempt = 0; attempt <= _maxRetries; attempt++) {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(minutes: 30),
-      ));
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 30),
+        ),
+      );
 
       try {
         // Check how much we already have from a previous partial download.
@@ -78,9 +80,7 @@ class ModelManager {
             // `received` is bytes received in THIS request.
             // `total` is the remaining content length (-1 if unknown).
             final totalReceived = existingBytes + received;
-            final fullSize = total != -1
-                ? existingBytes + total
-                : -1;
+            final fullSize = total != -1 ? existingBytes + total : -1;
 
             if (fullSize > 0) {
               final progress = totalReceived / fullSize;
@@ -105,7 +105,6 @@ class ModelManager {
 
         debugPrint('[ModelManager] Download complete: $finalPath');
         return; // Success — exit the retry loop.
-
       } on DioException catch (e) {
         // If user cancelled, don't retry — propagate immediately.
         if (cancelToken?.isCancelled == true) {
@@ -113,7 +112,8 @@ class ModelManager {
         }
 
         // Connection-drop errors are retryable.
-        final isRetryable = e.type == DioExceptionType.connectionTimeout ||
+        final isRetryable =
+            e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout ||
             e.type == DioExceptionType.connectionError ||
             e.type == DioExceptionType.unknown;
@@ -133,7 +133,6 @@ class ModelManager {
           await partFile.delete();
         }
         throw Exception('Failed to download model: $e');
-
       } catch (e) {
         // Non-Dio errors — clean up and fail immediately.
         if (await partFile.exists()) {

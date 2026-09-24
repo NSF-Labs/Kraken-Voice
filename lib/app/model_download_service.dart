@@ -20,7 +20,7 @@ const _embModelUrl =
     'speaker-recongition-models/'
     'nemo_en_titanet_small.onnx';
 
-const _gemmaUrl = ModelProfile.url;
+String get _gemmaUrl => ModelProfile.url;
 
 /// Overall download pipeline state.
 enum DownloadPipelineState { idle, checking, downloading, completed, error }
@@ -71,7 +71,8 @@ class DownloadStep {
 /// are downloaded via Dart/Dio since they complete quickly.
 class ModelDownloadService {
   // Singleton
-  static final ModelDownloadService _instance = ModelDownloadService._internal();
+  static final ModelDownloadService _instance =
+      ModelDownloadService._internal();
   factory ModelDownloadService() => _instance;
   ModelDownloadService._internal() {
     _setupNativeCallbacks();
@@ -83,8 +84,9 @@ class ModelDownloadService {
   final _downloadChannel = NativeModelDownload();
 
   /// Current pipeline state.
-  final ValueNotifier<DownloadPipelineState> state =
-      ValueNotifier(DownloadPipelineState.idle);
+  final ValueNotifier<DownloadPipelineState> state = ValueNotifier(
+    DownloadPipelineState.idle,
+  );
 
   /// The list of download steps. Updated in-place and re-notified.
   final ValueNotifier<List<DownloadStep>> steps = ValueNotifier([]);
@@ -125,16 +127,21 @@ class ModelDownloadService {
         case 'onDownloadComplete':
           debugPrint('[ModelDownloadService] Native Gemma download complete.');
           _updateStep(0, status: StepStatus.done, progress: 1.0);
-          if (_nativeDownloadCompleter != null && !_nativeDownloadCompleter!.isCompleted) {
+          if (_nativeDownloadCompleter != null &&
+              !_nativeDownloadCompleter!.isCompleted) {
             _nativeDownloadCompleter!.complete();
           }
           break;
 
         case 'onDownloadError':
           final args = arguments as Map?;
-          final errorMsg = args?['error'] as String? ?? 'Unknown native download error';
-          debugPrint('[ModelDownloadService] Native Gemma download failed: $errorMsg');
-          if (_nativeDownloadCompleter != null && !_nativeDownloadCompleter!.isCompleted) {
+          final errorMsg =
+              args?['error'] as String? ?? 'Unknown native download error';
+          debugPrint(
+            '[ModelDownloadService] Native Gemma download failed: $errorMsg',
+          );
+          if (_nativeDownloadCompleter != null &&
+              !_nativeDownloadCompleter!.isCompleted) {
             _nativeDownloadCompleter!.completeError(Exception(errorMsg));
           }
           break;
@@ -149,7 +156,9 @@ class ModelDownloadService {
       await _downloadChannel.stop();
       debugPrint('[ModelDownloadService] Foreground download service stopped.');
     } catch (e) {
-      debugPrint('[ModelDownloadService] Could not stop foreground service: $e');
+      debugPrint(
+        '[ModelDownloadService] Could not stop foreground service: $e',
+      );
     }
   }
 
@@ -192,7 +201,11 @@ class ModelDownloadService {
 
     try {
       final stepList = <DownloadStep>[
-        DownloadStep(label: 'Gemma 4 AI Engine', sizeHint: '~2.5 GB'),
+        DownloadStep(
+          label: 'Gemma 4 AI Engine',
+          sizeHint:
+              '${(ModelProfile.bytes / 1000000000).toStringAsFixed(1)} GB',
+        ),
         DownloadStep(label: 'Whisper Transcription', sizeHint: '~40 MB'),
         if (kDiarizationEnabled)
           DownloadStep(label: 'Speaker Diarization', sizeHint: '~44 MB'),
@@ -219,9 +232,8 @@ class ModelDownloadService {
       steps.value = stepList;
       _recalcProgress();
 
-      final allDone = hasGemma &&
-          hasWhisper &&
-          (kDiarizationEnabled ? hasSherpa : true);
+      final allDone =
+          hasGemma && hasWhisper && (kDiarizationEnabled ? hasSherpa : true);
 
       state.value = allDone
           ? DownloadPipelineState.completed
@@ -264,9 +276,11 @@ class ModelDownloadService {
       // Step 1: Whisper (small, ~40 MB — fast enough to stay in Dart)
       if (stepList[1].status != StepStatus.done) {
         _currentStep = 1;
-        _updateStep(1,
-            status: StepStatus.downloading,
-            progressText: 'Downloading Whisper model...');
+        _updateStep(
+          1,
+          status: StepStatus.downloading,
+          progressText: 'Downloading Whisper model...',
+        );
         final engine = TranscriptionEngine();
         await engine.downloadModel();
         _updateStep(1, status: StepStatus.done, progress: 1.0);
@@ -277,9 +291,11 @@ class ModelDownloadService {
           stepList.length > 2 &&
           stepList[2].status != StepStatus.done) {
         _currentStep = 2;
-        _updateStep(2,
-            status: StepStatus.downloading,
-            progressText: 'Downloading segmentation model...');
+        _updateStep(
+          2,
+          status: StepStatus.downloading,
+          progressText: 'Downloading segmentation model...',
+        );
 
         final modelsDir = await _diarizationModelsDir;
         await Directory(modelsDir).create(recursive: true);
@@ -296,11 +312,11 @@ class ModelDownloadService {
           );
 
           _updateStep(2, progressText: 'Extracting segmentation model...');
-          final r =
-              await Process.run('tar', ['xjf', tarPath, '-C', modelsDir]);
+          final r = await Process.run('tar', ['xjf', tarPath, '-C', modelsDir]);
           if (r.exitCode != 0) {
             throw Exception(
-                'Failed to extract segmentation model: ${r.stderr}');
+              'Failed to extract segmentation model: ${r.stderr}',
+            );
           }
           try {
             await File(tarPath).delete();

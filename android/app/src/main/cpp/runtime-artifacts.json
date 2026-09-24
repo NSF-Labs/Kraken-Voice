@@ -36,6 +36,11 @@
       "path": "llama.cpp/lib/libllama.so",
       "size": 3119136,
       "sha256": "30cb3ba93848eb68cbd0054e9c3e6e948773b2b3ed60137f7f097ede33b04fb1"
+    },
+    {
+      "path": "llama.cpp/lib/libggml-htp-v79.so",
+      "size": 730248,
+      "sha256": "6eb04178e0c2109be42c2c822d7dd2b4283b9c8bf933decb2e89bdb6f2a02a0b"
     }
   ]
 }

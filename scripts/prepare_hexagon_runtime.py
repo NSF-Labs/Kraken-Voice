@@ -42,7 +42,7 @@ def main():
             partial.replace(target)
         finally:
             partial.unlink(missing_ok=True)
-    print('Verified pinned Hexagon runtime (7 libraries).')
+    print(f"Verified pinned Hexagon runtime ({len(manifest['files'])} libraries).")
 
 if __name__ == '__main__':
     main()

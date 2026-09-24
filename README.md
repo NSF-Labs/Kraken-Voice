@@ -1,20 +1,25 @@
 # Krak-EN Voice
 
-Default Android build: **1.0.14-npu-sm8850+14** — Gemma 4 E2B on Hexagon NPU.
-The separate S24 GPU build is **1.0.15-gpu-sm8650+15**; see
-[S24 GPU setup and validation](S24_GPU_TEST_RESULTS.md). Build it with
-`sh scripts/build_s24_gpu.sh` (no Hexagon runtime preparation required).
-Summaries now allow 2,048 output tokens, continue within the available model context,
-and preserve incomplete drafts if interrupted.
-Summary generation shows estimated progress, section counts, live output activity and elapsed time.
-See the [attached-device runtime audit](RUNTIME_DEVICE_AUDIT.md) for S24/S26 backend verification.
-PDF and Word `.docx` imports are available in Files; see [document import](DOCUMENT_IMPORT.md).
-Read [release eligibility and build instructions](RELEASE_DEVICE_POLICY.md)
-and [S26 validation results](S26_RELEASE_TEST_RESULTS.md) before distribution.
+Current build: **1.0.16+16**, one Android app with automatic GPU/NPU model selection.
+See [unified build and validation](UNIFIED_RELEASE.md) for supported devices,
+remaining release checks, build commands and signing-key recovery.
 
-Before building Android, run `python3 scripts/prepare_hexagon_runtime.py` to
-fetch the checksum-pinned runtime libraries. Model weights download separately
-inside the app. Only validated SM8850 phones are enabled in this build.
+- S24 Ultra SM-S928U / SM8650: Gemma 4 E2B, LiteRT-LM 0.17.1, Adreno GPU.
+- S25 SM-S931U, S25+ SM-S936U, S25 Ultra SM-S938U / SM8750: same NPU
+  GGUF as S26, Hexagon v79 runtime. **Physical-device validation pending.**
+- S26 Ultra SM-S948U / SM8850: Gemma 4 E2B GGUF, Hexagon v81 NPU.
+
+The app downloads only the selected AI model. CPU-only inference fallback is
+not enabled. Other model/chipset combinations remain excluded.
+Run `sh scripts/build_unified.sh` for the development profile APK, or
+`sh scripts/build_unified.sh bundle` with the existing upload key configured
+for the production AAB. The model weights download separately.
+
+Summaries preserve interrupted drafts and show estimated progress. Files supports
+PDF and Word `.docx` imports; see [document import](DOCUMENT_IMPORT.md).
+Historical device findings are in [S24 GPU results](S24_GPU_TEST_RESULTS.md),
+[S26 NPU results](S26_RELEASE_TEST_RESULTS.md) and the
+[runtime audit](RUNTIME_DEVICE_AUDIT.md).
 
 ## Getting Started
 

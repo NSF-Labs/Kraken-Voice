@@ -1,4 +1,3 @@
-import java.util.Base64
 import java.util.Properties
 import java.io.FileInputStream
 
@@ -9,12 +8,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// One explicit build switch selects matching Dart and native profiles.
-val gpuBuild = (project.findProperty("dart-defines") as? String).orEmpty()
-    .split(",").filter { it.isNotBlank() }
-    .map { String(Base64.getDecoder().decode(it)) }
-    .contains("KRAKEN_S24_GPU=true")
-
 // Load key.properties for release signing
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -23,7 +16,6 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    sourceSets.getByName("main").java.srcDir(if (gpuBuild) "src/gpu/kotlin" else "src/npu/kotlin")
     namespace = "org.krak_en.voice"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -41,17 +33,16 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 31
         ndk { abiFilters += "arm64-v8a" }
-        if (!gpuBuild) externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static"; abiFilters += "arm64-v8a" } }
+        externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static"; abiFilters += "arm64-v8a" } }
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    if (!gpuBuild) externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
+    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     packaging { jniLibs {
         useLegacyPackaging = true
         keepDebugSymbols += "**/libggml-htp-*.so"
-        if (gpuBuild) excludes += setOf("**/libggml*.so", "**/libllama.so", "**/libkraken_npu.so")
     } }
 
     signingConfigs {
@@ -70,11 +61,11 @@ android {
         create("dev") {
             dimension = "env"
             applicationIdSuffix = ".dev"
-            resValue("string", "app_name", if (gpuBuild) "Krak-EN Voice GPU" else "Krak-EN Voice")
+            resValue("string", "app_name", "Krak-EN Voice")
         }
         create("prod") {
             dimension = "env"
-            resValue("string", "app_name", if (gpuBuild) "Krak-EN Voice GPU" else "Krak-EN Voice")
+            resValue("string", "app_name", "Krak-EN Voice")
         }
     }
 
@@ -99,7 +90,7 @@ flutter {
 }
 
 dependencies {
-    if (gpuBuild) implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
     testImplementation("junit:junit:4.13.2")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
@@ -110,7 +101,7 @@ val verifyHexagonRuntime by tasks.registering(Exec::class) {
     workingDir(rootProject.projectDir.parentFile)
     commandLine("python3", "scripts/prepare_hexagon_runtime.py", "--verify")
 }
-if (!gpuBuild) tasks.named("preBuild") { dependsOn(verifyHexagonRuntime) }
+tasks.named("preBuild") { dependsOn(verifyHexagonRuntime) }
 
 // Flutter supplies broad ABI defaults late in configuration. This runtime is ARM64-only.
 androidComponents {
