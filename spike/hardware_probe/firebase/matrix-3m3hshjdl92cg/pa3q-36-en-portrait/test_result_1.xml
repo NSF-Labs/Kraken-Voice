@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name='' hostname='localhost' tests='1' failures='0' skipped='0' errors='0' time='699.801' timestamp='2026-09-24T14:40:37'>
+    <properties />
+    <testcase name='npuSummary' classname='org.krak_en.voice.NpuProbeTest' time='699.801' />
+  </testsuite>
+</testsuites>

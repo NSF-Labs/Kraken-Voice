@@ -1,0 +1,36 @@
+{
+  "package": "org.krak_en.voice",
+  "track": "internal",
+  "versionCode": 19,
+  "editId": "09344365084020844145",
+  "status": "committed",
+  "sha256": "4ba6d6b2b300a70c1ef6c02967393457d5c789d75fa92384a8c4b3303828fd62",
+  "versionName": "1.0.19",
+  "verifiedTrack": {
+    "track": "internal",
+    "releases": [
+      {
+        "name": "1.0.19",
+        "versionCodes": [
+          "19"
+        ],
+        "releaseNotes": [
+          {
+            "language": "en-US",
+            "text": "Improved Galaxy S24 AI summary quality with the updated Gemma 4 GPU model. Transcription and summaries continue in the background, and saved summaries persist after restarting the app. Updated Google Play billing support. Trial recordings allow up to 20 minutes, with a one-time full-version unlock."
+          }
+        ],
+        "status": "completed"
+      }
+    ]
+  },
+  "billingLibrary": "8.0.0",
+  "inAppPurchase": "3.3.1",
+  "inAppPurchaseAndroid": "0.5.3",
+  "regressionTestsPassed": 38,
+  "analysisErrors": 0,
+  "analysisWarnings": 0,
+  "analysisInfo": 24,
+  "productionRolloutChanged": false,
+  "onDevicePurchaseTestPerformed": false
+}

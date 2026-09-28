@@ -1,5 +1,13 @@
 # Current policy: unified build 1.0.16+16
 
+## Model policy — September 25, 2026
+
+Gemma 4 E2B is the only supported model family for device qualification and
+release. Gemma 3 testing is cancelled. Devices that cannot run Gemma 4 are
+excluded; there is no smaller-model fallback. Untested devices and download-only
+failures remain unqualified, not proven incompatible. A short inference pass
+does not replace quality, memory and sustained thermal acceptance.
+
 The policy below describes historical NPU build 14. It is superseded by
 [the unified release policy](UNIFIED_RELEASE.md): a single APK/AAB selects the
 matching GPU or NPU profile; S25 device acceptance is pending. Google Play catalog

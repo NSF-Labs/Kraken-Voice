@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "Tensor G4",
+  "model": "Pixel 9 Pro",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "passed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 16307687424,
+  "availableRamBeforeBytes": 10214850560,
+  "loadMs": 6175,
+  "backendEvidence": "Explicit Backend.GPU initialized; consult native logs for driver execution",
+  "responses": [
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 365,
+      "totalMs": 1360,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 20.630868689143046,
+      "pssKb": 1694642,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 283,
+      "totalMs": 1222,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 21.775893306928175,
+      "pssKb": 1690958,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 297,
+      "totalMs": 1511,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 17.00107887996518,
+      "pssKb": 1691198,
+      "thermalStatus": 0
+    }
+  ]
+}

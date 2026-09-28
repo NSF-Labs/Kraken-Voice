@@ -1,0 +1,1 @@
+{"complete":true,"version":"0.1.4+5","whisperInstalled":true,"transcript":" This is a test of offline voice transcription. The meeting starts at 9 tomorrow morning.","whisperPassed":true,"gemmaSupported":false,"gemmaReason":"This Gemma model needs at least 6 GB of device memory. Whisper transcription remains available."}

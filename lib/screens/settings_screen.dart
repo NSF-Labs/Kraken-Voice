@@ -1,3 +1,4 @@
+import 'dart:async';
 // ignore_for_file: use_build_context_synchronously
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -34,10 +35,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Export content toggles (paid-only per §5)
   bool _exportIncludeSummary = true;
   bool _exportIncludeActionItems = true;
-  bool _exportIncludeSpeakerNames = true;
   bool _exportIncludeTimestamps = false;
   bool _exportIncludeTranscript = true;
   bool _isPaidUser = false;
+  StreamSubscription<EntitlementChangeEvent>? _entitlementSubscription;
 
   // About
   String _appVersion = '1.0.0';
@@ -77,6 +78,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    final entitlements = context.read<EntitlementService>();
+    _entitlementSubscription = entitlements.changes.listen((_) { if (mounted) _loadStatus(); });
+    entitlements.ready.then((_) { if (mounted) _loadStatus(); });
     _readiness.whisperReady.addListener(_onReadinessChanged);
     _readiness.gemmaReady.addListener(_onReadinessChanged);
     if (kDiarizationEnabled) {
@@ -92,6 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (kDiarizationEnabled) {
       _readiness.diarizationReady.removeListener(_onReadinessChanged);
     }
+    _entitlementSubscription?.cancel();
     super.dispose();
   }
 
@@ -112,7 +117,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Export content toggles
     final inclSummary = await prefs.getBool('export_include_summary', defaultValue: true);
     final inclActions = await prefs.getBool('export_include_action_items', defaultValue: true);
-    final inclSpeakers = await prefs.getBool('export_include_speaker_names', defaultValue: true);
     final inclTimestamps = await prefs.getBool('export_include_timestamps', defaultValue: false);
     final inclTranscript = await prefs.getBool('export_include_transcript', defaultValue: true);
 
@@ -160,7 +164,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _exportFormat = exportFmt;
       _exportIncludeSummary = inclSummary;
       _exportIncludeActionItems = inclActions;
-      _exportIncludeSpeakerNames = inclSpeakers;
       _exportIncludeTimestamps = inclTimestamps;
       _exportIncludeTranscript = inclTranscript;
       _isPaidUser = entitlements.isUnlocked('com.kraken.meeting_notes');
@@ -289,12 +292,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: Text('Audio Storage',
                             style: KrakenText.bodyMd()),
                         subtitle: Text(
+                          _isPaidUser ? '${(_storageBytes / (1024 * 1024)).toStringAsFixed(1)} MB used · No app storage cap' :
                           '${(_storageBytes / (1024 * 1024)).toStringAsFixed(1)} MB of '
                           '${(RetentionService.maxStorageBytes / (1024 * 1024 * 1024)).toStringAsFixed(0)} GB used',
                           style: KrakenText.caption(
                               color: KrakenColors.textSecondary),
                         ),
-                        trailing: SizedBox(
+                        trailing: _isPaidUser ? null : SizedBox(
                           width: 60,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(4),
@@ -821,15 +825,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _exportIncludeActionItems,
             onChanged: (v) => _setExportToggle('export_include_action_items', v,
                 (val) => _exportIncludeActionItems = val),
-          ),
-          const Divider(color: Colors.white10, height: 1),
-          _buildToggleTile(
-            icon: Icons.people_outline,
-            title: 'Include Speaker Names',
-            subtitle: 'Show speaker labels in transcript',
-            value: _exportIncludeSpeakerNames,
-            onChanged: (v) => _setExportToggle('export_include_speaker_names', v,
-                (val) => _exportIncludeSpeakerNames = val),
           ),
           const Divider(color: Colors.white10, height: 1),
           _buildToggleTile(

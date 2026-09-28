@@ -35,6 +35,8 @@ class KrakenRecordingService : Service() {
 
         var amplitudeListener: ((Double) -> Unit)? = null
         var isRecordingActive = false
+        var limitSeconds = 1200
+        var lastDurationMs = 0L
 
         // Callback for notification-triggered actions back to Flutter
         var onNotificationStop: (() -> Unit)? = null
@@ -42,6 +44,7 @@ class KrakenRecordingService : Service() {
     }
 
     private var mediaRecorder: MediaRecorder? = null
+    private var recordingWakeLock: android.os.PowerManager.WakeLock? = null
     private var isPaused = false
     private val CHANNEL_ID = "KrakenRecordingChannel"
     private val NOTIFICATION_ID = 1
@@ -80,8 +83,8 @@ class KrakenRecordingService : Service() {
             ACTION_RESUME -> resumeRecording()
             ACTION_STOP -> stopRecording()
             ACTION_NOTIFICATION_STOP -> {
-                onNotificationStop?.invoke()
                 stopRecording()
+                onNotificationStop?.invoke()
             }
             ACTION_NOTIFICATION_PAUSE -> {
                 if (isPaused) {
@@ -124,9 +127,11 @@ class KrakenRecordingService : Service() {
             prepare()
             start()
         }
+        recordingWakeLock = (getSystemService(POWER_SERVICE) as android.os.PowerManager)
+            .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "kraken:recording").apply { acquire() }
         isRecordingActive = true
         isPaused = false
-        recordingStartTimeMs = System.currentTimeMillis()
+        recordingStartTimeMs = android.os.SystemClock.elapsedRealtime()
         pausedDurationMs = 0L
 
         startForeground(NOTIFICATION_ID, createNotification("Recording…", java.time.Duration.ZERO))
@@ -139,7 +144,7 @@ class KrakenRecordingService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null && !isPaused) {
             mediaRecorder?.pause()
             isPaused = true
-            pauseStartTimeMs = System.currentTimeMillis()
+            pauseStartTimeMs = android.os.SystemClock.elapsedRealtime()
             updateNotificationWithElapsed()
             stopAmplitudePolling()
         }
@@ -148,7 +153,7 @@ class KrakenRecordingService : Service() {
     private fun resumeRecording() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null && isPaused) {
             mediaRecorder?.resume()
-            pausedDurationMs += System.currentTimeMillis() - pauseStartTimeMs
+            pausedDurationMs += android.os.SystemClock.elapsedRealtime() - pauseStartTimeMs
             isPaused = false
             updateNotificationWithElapsed()
             startAmplitudePolling()
@@ -156,12 +161,15 @@ class KrakenRecordingService : Service() {
     }
 
     private fun stopRecording() {
+        if (mediaRecorder != null) lastDurationMs = getElapsedSeconds() * 1000
         try {
             mediaRecorder?.stop()
             mediaRecorder?.release()
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
+            recordingWakeLock?.let { if (it.isHeld) it.release() }
+            recordingWakeLock = null
             mediaRecorder = null
             isRecordingActive = false
             isPaused = false
@@ -177,7 +185,7 @@ class KrakenRecordingService : Service() {
 
     private fun getElapsedSeconds(): Long {
         if (recordingStartTimeMs == 0L) return 0
-        val now = System.currentTimeMillis()
+        val now = android.os.SystemClock.elapsedRealtime()
         val totalMs = now - recordingStartTimeMs - pausedDurationMs -
             (if (isPaused) (now - pauseStartTimeMs) else 0L)
         return (totalMs / 1000).coerceAtLeast(0)
@@ -198,6 +206,11 @@ class KrakenRecordingService : Service() {
         notificationUpdateRunnable = object : Runnable {
             override fun run() {
                 if (isRecordingActive) {
+                    if (limitSeconds > 0 && getElapsedSeconds() >= limitSeconds) {
+                        stopRecording()
+                        onNotificationStop?.invoke()
+                        return
+                    }
                     updateNotificationWithElapsed()
                     handler.postDelayed(this, 1000)
                 }
@@ -252,7 +265,7 @@ class KrakenRecordingService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setUsesChronometer(!isPaused)
-            .setWhen(if (!isPaused) System.currentTimeMillis() - (elapsed.toMillis()) else System.currentTimeMillis())
+            .setWhen(if (!isPaused) android.os.SystemClock.elapsedRealtime() - (elapsed.toMillis()) else android.os.SystemClock.elapsedRealtime())
             .addAction(pauseIcon, pauseLabel, pausePendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .build()

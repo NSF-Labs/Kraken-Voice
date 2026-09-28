@@ -1,0 +1,14 @@
+{
+  "gemma4-e2b-gpu": {
+    "url": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it-gpu.litertlm",
+    "bytes": 2008432640,
+    "sha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+    "context": 4096
+  },
+  "gemma4-e2b-portable-gpu": {
+    "url": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it.litertlm",
+    "bytes": 2588147712,
+    "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "context": 4096
+  }
+}

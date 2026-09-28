@@ -1,0 +1,1 @@
+Vendored flutter_launcher_icons 0.14.4 (MIT). Fix iOS alpha blending: blend red with background red and green with background green. Upstream incorrectly uses background green and alpha, creating green halos on dark icons. All other behavior is unchanged.

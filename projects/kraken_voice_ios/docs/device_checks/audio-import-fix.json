@@ -1,0 +1,27 @@
+{
+  "version": "0.1.6+7",
+  "cause": "TCC abort: FileType.audio opened Apple Music without NSAppleMusicUsageDescription",
+  "fix": "iOS FileType.audio now presents the Files document picker filtered to public.audio; namespaced native helper avoids OSAnalytics class collision",
+  "devices": {
+    "iphone15-pro-max": {
+      "tests": [
+        "Test Case '-[RunnerTests.RunnerTests testAudioPickerImportsPlayableFixture]' passed (1.617 seconds).",
+        "Test Case '-[RunnerTests.RunnerTests testAudioPickerPresentsFilesAndCancels]' passed (1.350 seconds)."
+      ],
+      "result": [
+        "** TEST SUCCEEDED **"
+      ],
+      "scope": "Real native picker presentation/cancellation; synthetic provider callback, cached file integrity, persistent copy, audio decoder readiness. Provider navigation/cloud downloads not automated."
+    },
+    "iphone11": {
+      "tests": [
+        "Test Case '-[RunnerTests.RunnerTests testAudioPickerImportsPlayableFixture]' passed (1.776 seconds).",
+        "Test Case '-[RunnerTests.RunnerTests testAudioPickerPresentsFilesAndCancels]' passed (1.353 seconds)."
+      ],
+      "result": [
+        "** TEST EXECUTE SUCCEEDED **"
+      ],
+      "scope": "Real native picker presentation/cancellation; synthetic provider callback, cached file integrity, persistent copy, audio decoder readiness. Provider navigation/cloud downloads not automated."
+    }
+  }
+}

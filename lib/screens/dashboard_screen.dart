@@ -40,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   VoidCallback? _whisperReadyListener;
 
   late bool _isFreeTier;
+  StreamSubscription<EntitlementChangeEvent>? _entitlementSubscription;
 
   @override
   void initState() {
@@ -57,6 +58,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     final entitlements = RepositoryProvider.of<EntitlementService>(context, listen: false);
     _isFreeTier = !entitlements.isUnlocked('com.kraken.meeting_notes');
 
+    void refreshTier() {
+      if (mounted) setState(() => _isFreeTier = !entitlements.isUnlocked('com.kraken.meeting_notes'));
+    }
+    _entitlementSubscription = entitlements.changes.listen((_) => refreshTier());
+    entitlements.ready.then((_) => refreshTier());
     _checkModelStatus();
     _loadLanguagePreference();
     _loadMicSensitivity();
@@ -65,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   void dispose() {
+    _entitlementSubscription?.cancel();
     _breatheController.dispose();
     _amplitudeSubscription?.cancel();
     // Clean up whisper readiness listener
@@ -315,45 +322,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     if (audioEngine.recordingState.value != AudioRecordingState.recording) return;
     final secs = audioEngine.recordingDuration.value.inSeconds;
 
-    // 5-hour safety cap
-    if (secs >= 5 * 3600) {
-      _stopRecording(limitMsg: 'Recording stopped at the 5-hour safety limit. Your audio has been preserved.');
-      return;
-    }
-    if (secs == 4 * 3600 + 59 * 60) {
-      _showLimitModal('Recording will stop in 1 minute at the 5-hour safety limit.');
-    }
-
     // Free-tier 20-min limit
     if (!_isFreeTier) return;
-    if (secs >= 20 * 60) {
-      _stopRecording();
-      // Show upgrade paywall after auto-stop
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _showUpgradeModal(reachedLimit: true);
-      });
-    } else if (secs == 19 * 60 + 45 && !_upgradeShown) {
+    if (secs == 19 * 60 + 45 && !_upgradeShown) {
       _upgradeShown = true;
       _showUpgradeModal();
     }
-  }
-
-  void _showLimitModal(String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: KrakenColors.surfaceElevated,
-        title: Text('Safety Limit', style: KrakenText.displayMd()),
-        content: Text(message, style: KrakenText.bodyMd()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showUpgradeModal({bool reachedLimit = false}) {

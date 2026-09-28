@@ -44,6 +44,10 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <service android:name="org.krak_en.voice.KrakenProcessingService"
+            android:foregroundServiceType="dataSync" android:exported="false"
+            android:stopWithTask="false" />
+
         <!-- flutter_local_notifications: scheduled notification receivers -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

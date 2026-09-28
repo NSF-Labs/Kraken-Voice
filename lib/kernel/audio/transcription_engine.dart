@@ -1,6 +1,6 @@
-import 'package:krak_en_voice/kernel/inference/drafted_summary_stream.dart';
-import 'package:krak_en_voice/data/summary_draft_repository.dart';
-import 'package:krak_en_voice/kernel/inference/summary_context.dart';
+import '../processing/background_processing.dart';
+import '../inference/summary_generation_service.dart';
+import '../../data/recording_repository.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -11,7 +11,6 @@ import 'package:krak_en_voice/kernel/vault/vault_service.dart';
 import 'package:krak_en_voice/kernel/inference/local_inference_service.dart';
 import 'package:krak_en_voice/inference/model_manager.dart';
 import 'package:krak_en_voice/kernel/notifications/kraken_notification_service.dart';
-import 'package:krak_en_voice/data/summary_prompt.dart';
 import 'package:krak_en_voice/kernel/vault/preferences_service.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import 'package:whisper_ggml_plus_ffmpeg/whisper_ggml_plus_ffmpeg.dart';
@@ -96,6 +95,7 @@ class TranscriptionEngine {
   WhisperModel get model => _model;
 
   bool _isWorkerRunning = false;
+  int _queueRevision = 0;
 
   // State for UI
   final ValueNotifier<bool> isModelDownloading = ValueNotifier(false);
@@ -256,6 +256,7 @@ class TranscriptionEngine {
     );
 
     await vault.db.insert('transcription_jobs', job.toMap());
+    _queueRevision++;
     await _refreshJobs(vault);
 
     // Ensure the worker is running — if it crashed or was never started,
@@ -327,26 +328,31 @@ class TranscriptionEngine {
   }
 
   void startWorker(VaultService vault) {
-    if (_isWorkerRunning) return;
+    if (_isWorkerRunning || !vault.isOpen) return;
     _isWorkerRunning = true;
-
-    if (vault.isOpen) {
-      // Reset any orphaned 'processing' jobs from a previous session back to 'pending'
-      vault.db
-          .update(
-            'transcription_jobs',
-            {'status': TranscriptionStatus.pending.name},
-            where: 'status = ?',
-            whereArgs: [TranscriptionStatus.processing.name],
-          )
-          .then((_) {
-            _refreshJobs(vault); // Load jobs immediately for UI
-            _processNextJob(vault);
-          });
-    } else {
-      _refreshJobs(vault);
-      _processNextJob(vault);
-    }
+    unawaited(
+      BackgroundProcessing.instance
+          .run('transcription-worker', () async {
+            await vault.db.update(
+              'transcription_jobs',
+              {'status': TranscriptionStatus.pending.name},
+              where: 'status = ?',
+              whereArgs: [TranscriptionStatus.processing.name],
+            );
+            await _refreshJobs(vault);
+            int revision;
+            do {
+              revision = _queueRevision;
+              await _processNextJob(vault);
+            } while (revision != _queueRevision && vault.isOpen);
+          })
+          .catchError((Object e) {
+            debugPrint('[JobQueue] Background worker interrupted: $e');
+          })
+          .whenComplete(() {
+            _isWorkerRunning = false;
+          }),
+    );
   }
 
   void stopWorker() {
@@ -410,7 +416,6 @@ class TranscriptionEngine {
       // No pending jobs — stop the worker to avoid continuous polling.
       // It will be re-started automatically when queueJob() is called.
       debugPrint('[JobQueue] No pending jobs — worker idle, stopping.');
-      _isWorkerRunning = false;
       return;
     }
 
@@ -434,7 +439,7 @@ class TranscriptionEngine {
           whereArgs: [job.id],
         );
         await _refreshJobs(vault);
-        _processNextJob(vault);
+        await _processNextJob(vault);
         return;
       }
     } catch (_) {}
@@ -450,6 +455,8 @@ class TranscriptionEngine {
       whereArgs: [job.id],
     );
     await _refreshJobs(vault);
+
+    await LocalInferenceService().unloadModel();
 
     // Start progress estimator
     // Look up the audio duration from the recordings table
@@ -543,7 +550,7 @@ class TranscriptionEngine {
       _progressTimer?.cancel();
       _clearPhase(job.audioPath);
       _clearTokens(job.audioPath);
-      _processNextJob(vault);
+      await _processNextJob(vault);
       return;
     }
 
@@ -678,7 +685,7 @@ class TranscriptionEngine {
       await Future.delayed(Duration(seconds: backoffSeconds));
       _clearPhase(job.audioPath);
       _clearTokens(job.audioPath);
-      _processNextJob(vault);
+      await _processNextJob(vault);
       return;
     }
 
@@ -724,7 +731,7 @@ class TranscriptionEngine {
     if (finalStatus == TranscriptionStatus.completed &&
         text != null &&
         text.isNotEmpty) {
-      _autoTagRecording(vault, job.audioPath, text);
+      // Tags run after Whisper has released memory below.
     }
 
     // Diarization is now user-triggered (manual) from the transcript view.
@@ -745,7 +752,8 @@ class TranscriptionEngine {
         summaryMap[job.audioPath] = 0.97;
         transcriptionProgress.value = summaryMap;
 
-        _autoGenerateSummary(vault, job.audioPath, text);
+        await _autoTagRecording(vault, job.audioPath, text);
+        await _autoGenerateSummary(vault, job.audioPath, text);
       }
 
       // Push to 100% and clean up
@@ -763,7 +771,7 @@ class TranscriptionEngine {
     }
 
     // Process the next job immediately
-    _processNextJob(vault);
+    await _processNextJob(vault);
   }
 
   Future<String> transcribeFile(String audioPath, {String lang = 'en'}) async {
@@ -850,7 +858,7 @@ class TranscriptionEngine {
 
   /// Generates topic tags from a transcript using Gemma, then persists them.
   /// Runs fire-and-forget so it doesn't block the transcription queue.
-  void _autoTagRecording(
+  Future<void> _autoTagRecording(
     VaultService vault,
     String audioPath,
     String transcriptText,
@@ -888,8 +896,8 @@ class TranscriptionEngine {
         where: 'recording_id = ?',
         whereArgs: [recordingId],
       );
-      for (final tag in tags) {
-        final cleaned = tag.trim().toLowerCase();
+      for (final cleaned
+          in tags.map((tag) => tag.trim().toLowerCase()).toSet()) {
         if (cleaned.isEmpty || cleaned.length > 30) continue;
         await vault.db.insert('recording_tags', {
           'id': '${recordingId}_$cleaned',
@@ -908,13 +916,17 @@ class TranscriptionEngine {
   /// Auto-generates an AI summary after transcription completes.
   /// Uses the same Gemma model + SummaryPrompt as the manual UI flow.
   /// Non-fatal — a failure here doesn't block the recording from being usable.
-  void _autoGenerateSummary(
+  Future<void> _autoGenerateSummary(
     VaultService vault,
     String audioPath,
-    String transcriptText,
+    String text,
   ) async {
     try {
-      // Skip if a summary already exists (e.g. from a previous transcription run)
+      if (!await PreferencesService().getBool(
+        'summary_enabled',
+        defaultValue: true,
+      ))
+        return;
       final existing = await vault.db.query(
         'transcription_jobs',
         columns: ['summary_json'],
@@ -922,215 +934,30 @@ class TranscriptionEngine {
         whereArgs: [audioPath],
         limit: 1,
       );
-      if (existing.isNotEmpty && existing.first['summary_json'] != null) {
-        debugPrint(
-          '[AutoSummary] Summary already exists for $audioPath, skipping.',
-        );
-        return;
-      }
-
-      // Check if Gemma model is available
-      final modelManager = ModelManager();
-      final hasModel = await modelManager.hasModel();
-      if (!hasModel) {
-        debugPrint(
-          '[AutoSummary] Gemma model not available, skipping auto-summary.',
-        );
-        return;
-      }
-
-      debugPrint('[AutoSummary] Generating summary for $audioPath...');
-
-      // Read summary style preference
-      final prefs = PreferencesService();
-      final style = await prefs.getString(
+      if (existing.isNotEmpty && existing.first['summary_json'] != null) return;
+      if (!await ModelManager().hasModel()) return;
+      final recordings = await vault.db.query(
+        'recordings',
+        columns: ['id'],
+        where: 'audio_path = ? AND is_trashed = 0',
+        whereArgs: [audioPath],
+        limit: 1,
+      );
+      if (recordings.isEmpty) return;
+      final style = await PreferencesService().getString(
         'summary_style',
         defaultValue: 'concise',
       );
-
-      var prompt = SummaryPrompt.initial(transcriptText, style: style);
-
-      final inference = LocalInferenceService();
-
-      // loadModel now handles closing any stale engine internally
-      try {
-        await inference.loadModel();
-      } catch (e) {
-        debugPrint('[AutoSummary] Model load failed: $e');
-        return;
-      }
-
-      prompt =
-          await SummaryContext(
-            countTokens: inference.countTokens,
-            condense: (section) async {
-              final notes = StringBuffer();
-              await for (final token in inference.generateStream(
-                section,
-                maxTokens: 768,
-                autoContinue: true,
-              )) {
-                notes.write(token.text);
-              }
-              return notes.toString();
-            },
-          ).prepare(
-            transcriptText,
-            (text) => SummaryPrompt.initial(text, style: style),
-          );
-
-      final completer = Completer<String>();
-      String buffer = '';
-
-      final sub =
-          draftedSummaryStream(
-            inference,
-            prompt,
-            drafts: SummaryDraftRepository(vault),
-            key: 'audio:$audioPath',
-          ).listen(
-            (token) => buffer += token.text,
-            onDone: () {
-              if (!completer.isCompleted) completer.complete(buffer);
-            },
-            onError: (e) {
-              if (!completer.isCompleted) completer.completeError(e);
-            },
-          );
-
-      final rawOutput = await completer.future.timeout(
-        const Duration(minutes: 10),
-        onTimeout: () {
-          sub.cancel();
-          throw TimeoutException(
-            'Summary generation timed out; incomplete output was not saved.',
-          );
-        },
+      await SummaryGenerationService().enqueue(
+        folderRepo: FolderRepository(vault),
+        audioPath: audioPath,
+        recordingId: recordings.first['id'] as String,
+        transcript: text,
+        style: style,
       );
-
-      if (rawOutput.trim().isEmpty) {
-        debugPrint('[AutoSummary] Empty output, skipping.');
-        return;
-      }
-
-      // Parse the plain-text sections into JSON (same logic as the UI)
-      final jsonResult = _parseSummaryToJson(rawOutput);
-      if (jsonResult == null) {
-        debugPrint('[AutoSummary] Failed to parse summary output.');
-        return;
-      }
-
-      // Save to DB
-      await vault.db.update(
-        'transcription_jobs',
-        {'summary_json': jsonResult},
-        where: 'audio_path = ?',
-        whereArgs: [audioPath],
-      );
-
-      await SummaryDraftRepository(vault).clear('audio:$audioPath');
-      debugPrint('[AutoSummary] Summary saved for $audioPath.');
     } catch (e) {
-      debugPrint('[AutoSummary] Failed to generate summary: $e');
-      // Non-fatal — recording still works without auto-summary
+      debugPrint('[AutoSummary] $e');
     }
-  }
-
-  /// Parses Gemma's plain-text summary output into structured JSON.
-  /// Mirrors the section-parsing logic in recording_detail_screen.
-  String? _parseSummaryToJson(String text) {
-    // Strip any preamble before the first actual section header.
-    // The model sometimes echoes prompt instructions before starting.
-    final firstHeader = RegExp(r'SUMMARY\s*:|TLDR\s*:', caseSensitive: false);
-    final headerMatch = firstHeader.firstMatch(text);
-    final effective = headerMatch != null
-        ? text.substring(headerMatch.start)
-        : text;
-
-    // Clean common model artifacts
-    final cleaned = effective
-        .replaceAll(RegExp(r'<[^>]+>'), '') // strip HTML/XML tags
-        .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'\1') // strip markdown bold
-        .replaceAll(RegExp(r'\\[0-9]+'), ''); // strip \1 \2 etc. artifacts
-
-    // Try JSON first
-    try {
-      final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-      if (parsed.containsKey('tldr') || parsed.containsKey('key_points')) {
-        return jsonEncode(parsed);
-      }
-    } catch (_) {}
-
-    // Parse plain-text sections
-    String extractSection(String src, String header, List<String> nextHeaders) {
-      final pattern = RegExp(
-        header.replaceAll(':', '') + r'\s*:?',
-        caseSensitive: false,
-      );
-      final match = pattern.firstMatch(src);
-      if (match == null) return '';
-
-      int start = match.end;
-      int end = src.length;
-      for (final next in nextHeaders) {
-        final nextPattern = RegExp(
-          next.replaceAll(':', '') + r'\s*:?',
-          caseSensitive: false,
-        );
-        final nextMatch = nextPattern.firstMatch(src.substring(start));
-        if (nextMatch != null) {
-          end = start + nextMatch.start;
-          break;
-        }
-      }
-      return src.substring(start, end).trim();
-    }
-
-    List<String> splitLines(String section) {
-      return section
-          .split('\n')
-          .map((l) => l.replaceAll(RegExp(r'^[\s\-\*\d\.]+'), '').trim())
-          .where(
-            (l) =>
-                l.isNotEmpty &&
-                l.toLowerCase() != 'none' &&
-                l.toLowerCase() != 'n/a',
-          )
-          .toList();
-    }
-
-    const headers = [
-      'TLDR:',
-      'KEY POINTS:',
-      'DECISIONS:',
-      'ACTION ITEMS:',
-      'OPEN QUESTIONS:',
-    ];
-
-    final tldr = extractSection(cleaned, 'TLDR:', headers.sublist(1));
-    final keyPoints = extractSection(
-      cleaned,
-      'KEY POINTS:',
-      headers.sublist(2),
-    );
-    final decisions = extractSection(cleaned, 'DECISIONS:', headers.sublist(3));
-    final actionItems = extractSection(
-      cleaned,
-      'ACTION ITEMS:',
-      headers.sublist(4),
-    );
-    final openQuestions = extractSection(cleaned, 'OPEN QUESTIONS:', []);
-
-    if (tldr.isEmpty && keyPoints.isEmpty) return null;
-
-    final result = {
-      'tldr': tldr.replaceAll('\n', ' ').trim(),
-      'key_points': splitLines(keyPoints),
-      'decisions': splitLines(decisions),
-      'action_items': splitLines(actionItems),
-      'open_questions': splitLines(openQuestions),
-    };
-    return jsonEncode(result);
   }
 
   /// Uses Gemma to generate topic tags from transcript text.

@@ -1,0 +1,175 @@
+{
+  "testMatrixId": "matrix-1fcoetigmd91s",
+  "testSpecification": {
+    "testTimeout": "720s",
+    "androidInstrumentationTest": {
+      "appApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/app-qualification-debug.apk"
+      },
+      "testApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/app-qualification-debug-androidTest.apk"
+      },
+      "appPackageId": "org.krak_en.voice.qualification",
+      "testPackageId": "org.krak_en.voice.qualification.test",
+      "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+      "testTargets": [
+        "class org.krak_en.voice.NpuProbeTest"
+      ]
+    },
+    "testSetup": {
+      "filesToPush": [
+        {
+          "regularFile": {
+            "content": {
+              "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/data/local/tmp/gemma4-e2b-w4.gguf"
+            },
+            "devicePath": "/data/local/tmp/gemma4-e2b-w4.gguf"
+          }
+        }
+      ],
+      "directoriesToPull": [
+        "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe"
+      ],
+      "account": {
+        "googleAuto": {}
+      },
+      "environmentVariables": [
+        {
+          "key": "runInference",
+          "value": "true"
+        },
+        {
+          "key": "useStagedModel",
+          "value": "true"
+        }
+      ]
+    },
+    "disableVideoRecording": true,
+    "disablePerformanceMetrics": true
+  },
+  "environmentMatrix": {
+    "androidDeviceList": {
+      "androidDevices": [
+        {
+          "androidModelId": "m1q",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      ]
+    }
+  },
+  "testExecutions": [
+    {
+      "id": "matrix-1fcoetigmd91s_execution-107k0fqdx6lpr",
+      "testSpecification": {
+        "testTimeout": "720s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.NpuProbeTest"
+          ]
+        },
+        "testSetup": {
+          "filesToPush": [
+            {
+              "regularFile": {
+                "content": {
+                  "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/data/local/tmp/gemma4-e2b-w4.gguf"
+                },
+                "devicePath": "/data/local/tmp/gemma4-e2b-w4.gguf"
+              }
+            }
+          ],
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          },
+          "environmentVariables": [
+            {
+              "key": "runInference",
+              "value": "true"
+            },
+            {
+              "key": "useStagedModel",
+              "value": "true"
+            }
+          ]
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "m1q",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-25T15:16:27.344585Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "Done. Test time = 23 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 4 (secs)"
+        ]
+      },
+      "matrixId": "matrix-1fcoetigmd91s",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.9be9137b2ee2a6b4",
+        "executionId": "6518523641879792753",
+        "stepId": "bs.c934ef37ce013a71"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    }
+  ],
+  "resultStorage": {
+    "googleCloudStorage": {
+      "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:16:24.484905_XJmY/"
+    },
+    "toolResultsHistory": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.9be9137b2ee2a6b4"
+    },
+    "toolResultsExecution": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.9be9137b2ee2a6b4",
+      "executionId": "6518523641879792753"
+    },
+    "resultsUrl": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/6518523641879792753"
+  },
+  "projectId": "kraken-voice",
+  "state": "FINISHED",
+  "timestamp": "2026-09-25T15:16:27.344585Z",
+  "clientInfo": {
+    "name": "gcloud",
+    "clientInfoDetails": [
+      {
+        "key": "Cloud SDK Version",
+        "value": "586.0.0"
+      },
+      {
+        "key": "Release Track",
+        "value": "GA"
+      }
+    ]
+  },
+  "outcomeSummary": "SUCCESS"
+}

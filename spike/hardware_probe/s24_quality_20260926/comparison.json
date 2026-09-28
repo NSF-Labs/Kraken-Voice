@@ -1,0 +1,66 @@
+[
+  {
+    "run": "gpu",
+    "status": "failed",
+    "passedResponses": 1,
+    "responses": 3,
+    "loadMs": 7661,
+    "minAvailableGiB": 2.93,
+    "maxPssGiB": 2.32,
+    "longPromptTokens": 445,
+    "longDecodeTps": [
+      34.16,
+      35.91
+    ],
+    "lowMemoryFlag": false,
+    "maxThermalStatus": 0
+  },
+  {
+    "run": "gpu-speculative",
+    "status": "failed",
+    "passedResponses": 1,
+    "responses": 3,
+    "loadMs": 7499,
+    "minAvailableGiB": 3.85,
+    "maxPssGiB": 2.32,
+    "longPromptTokens": 445,
+    "longDecodeTps": [
+      35.11,
+      36.16
+    ],
+    "lowMemoryFlag": false,
+    "maxThermalStatus": 0
+  },
+  {
+    "run": "portable",
+    "status": "passed",
+    "passedResponses": 3,
+    "responses": 3,
+    "loadMs": 9090,
+    "minAvailableGiB": 3.48,
+    "maxPssGiB": 2.15,
+    "longPromptTokens": 445,
+    "longDecodeTps": [
+      33.66,
+      25.54
+    ],
+    "lowMemoryFlag": false,
+    "maxThermalStatus": 0
+  },
+  {
+    "run": "portable-repeat",
+    "status": "passed",
+    "passedResponses": 3,
+    "responses": 3,
+    "loadMs": 4156,
+    "minAvailableGiB": 3.69,
+    "maxPssGiB": 2.1,
+    "longPromptTokens": 445,
+    "longDecodeTps": [
+      32.93,
+      30.62
+    ],
+    "lowMemoryFlag": false,
+    "maxThermalStatus": 0
+  }
+]

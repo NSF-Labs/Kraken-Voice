@@ -1,0 +1,24 @@
+{
+  "build": "1.0.17+17",
+  "apk_sha256": "c6450a326bb6e0d8132d059f0a81372e2e903a01261957c6929931d725c30e22",
+  "flutter_tests_passed": 77,
+  "analysis_errors": 0,
+  "analysis_warnings": 0,
+  "analysis_info_findings": 24,
+  "installed_hash_matches": {
+    "S24 Ultra": true,
+    "S26 Ultra": true
+  },
+  "S24 Ultra": {
+    "background_transcription": "PASS, 133-second fixture, ~39-second transcription, process remained alive",
+    "summary_restart_recovery": "PASS, force-stop while foreground processing service active; new process automatically resumed request",
+    "summary_quality": "FAIL, pinned Gemma 4 GPU output repeatedly corrupt; final guard rejected three attempts and surfaced retryable failure"
+  },
+  "S26 Ultra": {
+    "trial_boundary": "PASS, background/display asleep; recording saved at 20:00, native service stopped",
+    "background_document_summary": "PASS, final APK, expected amount/owner/deadline preserved",
+    "completed_summary_restart_persistence": "PASS, listed Summary saved after force-stop/reopen"
+  },
+  "billing": "App uses existing non-consumable product and $4.95 fallback. Play price configuration and license-test purchase/restore are not verified.",
+  "release_status": "Trial/testing artifact; S24 model quality is not production-qualified."
+}

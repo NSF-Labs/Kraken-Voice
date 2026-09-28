@@ -5,7 +5,7 @@ import java.util.Locale
 
 /** Explicit device/profile allowlist. New models require on-device validation. */
 object ReleaseHardware {
-    const val BUILD = "1.0.16+16"
+    const val BUILD = "1.0.19+19"
     enum class Profile { NPU, GPU }
     var qualificationBackend: Profile? = null
 

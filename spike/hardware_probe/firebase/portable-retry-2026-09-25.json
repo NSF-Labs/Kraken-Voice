@@ -1,0 +1,68 @@
+{
+  "status": "completed_all_passed",
+  "purpose": "Pixel 10 GPU timeout remediation; explicit alternate Gemma 4 E2B export, no CPU-only fallback",
+  "baselineMatrix": "matrix-28jvwti7jl190",
+  "hypothesis": "The GPU-specific artifact selects GpuArtisan and stalls during decode on Pixel 10. Compare the publisher standard export under Backend.GPU without changing the 4096 context or 90-second limit.",
+  "model": {
+    "url": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it.litertlm",
+    "bytes": 2588147712,
+    "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+    "context": 4096
+  },
+  "tests": [
+    {
+      "matrixId": "matrix-35v3mjriaw9f1",
+      "backend": "NPU",
+      "device": "m1q",
+      "role": "regression",
+      "status": "FINISHED",
+      "outcome": "SUCCESS",
+      "state": "FINISHED",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/5541451948783581995",
+      "reports": [
+        {
+          "device": "SM-S942U1",
+          "status": "passed",
+          "loadMs": 5209,
+          "medianFirstTextMs": 58,
+          "medianDecodeTokensPerSecond": null,
+          "report": "matrix-35v3mjriaw9f1/m1q-36-en-portrait/artifacts/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe/gemma4-e2b-npu.json"
+        }
+      ]
+    },
+    {
+      "matrixId": "matrix-2ateexz85mszl",
+      "backend": "GPU",
+      "devices": [
+        "blazer",
+        "m1q"
+      ],
+      "modelCandidate": "gemma4-e2b-portable-gpu",
+      "role": "alternate-export compatibility comparison",
+      "state": "FINISHED",
+      "outcome": "SUCCESS",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/8679824764687551509",
+      "reports": [
+        {
+          "device": "SM-S942U1",
+          "status": "passed",
+          "loadMs": 8595,
+          "medianFirstTextMs": 137,
+          "medianDecodeTokensPerSecond": 38.327498354983774,
+          "report": "matrix-2ateexz85mszl/m1q-36-en-portrait/artifacts/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe/gemma4-e2b-portable-gpu.json"
+        },
+        {
+          "device": "Pixel 10 Pro",
+          "status": "passed",
+          "loadMs": 35550,
+          "medianFirstTextMs": 1584,
+          "medianDecodeTokensPerSecond": 1.9179253437499555,
+          "report": "matrix-2ateexz85mszl/blazer-36-en-portrait/artifacts/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe/gemma4-e2b-portable-gpu.json"
+        }
+      ]
+    }
+  ],
+  "testApkSha256": "05552be0468a6e94968056e95dc3ba46340e8d474d6844e014f7531559c256e6",
+  "releaseEligibilityChanged": false,
+  "conclusion": "Alternate Gemma 4 E2B export resolves Pixel 10 GPU generation timeout through OpenCL; smoke pass only, slow throughput remains."
+}

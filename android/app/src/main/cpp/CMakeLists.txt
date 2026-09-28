@@ -10,3 +10,10 @@ add_library(kraken_npu SHARED kraken_npu.cpp)
 target_include_directories(kraken_npu PRIVATE include)
 target_link_libraries(kraken_npu llama ggml ggml-base log)
 target_link_options(kraken_npu PRIVATE "-Wl,-z,max-page-size=16384")
+
+# Discovery helper exists only in the internal qualification flavor.
+if(KRAKEN_HARDWARE_PROBE)
+  add_library(hardware_probe SHARED hardware_probe.cpp)
+  target_link_libraries(hardware_probe dl)
+  target_link_options(hardware_probe PRIVATE "-Wl,-z,max-page-size=16384")
+endif()

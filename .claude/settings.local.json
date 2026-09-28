@@ -2,7 +2,27 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/apete/**)",
-      "Read(//c/Users/apete/.config/**)"
+      "Read(//c/Users/apete/.config/**)",
+      "Bash(flutter analyze *)",
+      "Bash(gh release *)",
+      "WebFetch(domain:github.com)",
+      "Bash(flutter test *)",
+      "Bash(adb devices *)",
+      "Bash(adb shell *)",
+      "Bash(adb push *)",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'mkdir -p /data/local/tmp/diarization_calibration')",
+      "Bash(MSYS_NO_PATHCONV=1 adb push \"/g/My Drive/Developer/Antigravity Projects/Kraken Hub/krak_en_voice/integration_test/fixtures/diarization_calibration/.\" /data/local/tmp/diarization_calibration/)",
+      "Bash(MSYS_NO_PATHCONV=1 adb push \"G:/My Drive/Developer/Antigravity Projects/Kraken Hub/krak_en_voice/integration_test/fixtures/diarization_calibration/.\" /data/local/tmp/diarization_calibration/)",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'ls -la /data/local/tmp/diarization_calibration/')",
+      "Bash(tee /tmp/calibration_run.log)",
+      "Bash(tee /tmp/calibration_run2.log)",
+      "Bash(MSYS_NO_PATHCONV=1 adb pull /storage/emulated/0/Android/data/com.kraken.hub.kraken_hub.dev/files/diarization_calibration_results \"G:/My Drive/Developer/Antigravity Projects/Kraken Hub/krak_en_voice/build/\")",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'ls /sdcard/Android/data/com.kraken.hub.kraken_hub.dev/files/')",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'pm list packages | grep -i kraken')",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'pm list packages --user 150 | grep -i kraken')",
+      "Bash(MSYS_NO_PATHCONV=1 adb shell 'am get-current-user')",
+      "Bash(MSYS_NO_PATHCONV=1 adb push \"G:/My Drive/Developer/Antigravity Projects/Kraken Hub/krak_en_voice/integration_test/fixtures/diarization_calibration/nwt_40_Mt_E_04.spec.json\" /data/local/tmp/diarization_calibration/)",
+      "Bash(tee /tmp/calibration_run3.log)"
     ]
   }
 }

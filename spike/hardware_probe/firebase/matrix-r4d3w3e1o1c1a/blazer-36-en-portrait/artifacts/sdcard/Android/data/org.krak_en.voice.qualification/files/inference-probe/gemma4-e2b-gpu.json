@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "Tensor G5",
+  "model": "Pixel 10 Pro",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "failed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 16299462656,
+  "availableRamBeforeBytes": 10105946112,
+  "failureStage": "download",
+  "error": "FileNotFoundException: \/storage\/emulated\/0\/Android\/data\/org.krak_en.voice.qualification\/files\/inference-models\/gemma4-e2b-gpu.partial: open failed: EACCES (Permission denied)"
+}

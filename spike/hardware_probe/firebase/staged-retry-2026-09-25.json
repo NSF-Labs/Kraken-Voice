@@ -1,0 +1,104 @@
+{
+  "date": "2026-09-25",
+  "project": "kraken-voice",
+  "status": "completed",
+  "modelPolicy": "Gemma 4 E2B only",
+  "testTimeout": "12m per device",
+  "resultsBucket": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a",
+  "tests": [
+    {
+      "backend": "GPU",
+      "devices": [
+        "m1q API36",
+        "blazer API36"
+      ],
+      "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+      "submissionOutput": "/private/tmp/kraken-staged-gpu-submission.json",
+      "matrixId": "matrix-r4d3w3e1o1c1a",
+      "state": "FINISHED",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/7202547094223753459",
+      "deviceStates": [
+        {
+          "device": "blazer",
+          "state": "RUNNING"
+        },
+        {
+          "device": "m1q",
+          "state": "RUNNING"
+        }
+      ],
+      "outcome": "FAILURE",
+      "interpretation": "Inconclusive: staging permissions (EACCES), before inference"
+    },
+    {
+      "backend": "NPU",
+      "devices": [
+        "m1q API36"
+      ],
+      "modelSha256": "e531007218dfab990486a5de7676a6932d6ea8dea233d1f698d7c21cf8a16889",
+      "submissionOutput": "/private/tmp/kraken-staged-npu-submission.json",
+      "matrixId": "matrix-32xe25j987o54",
+      "state": "FINISHED",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/5873343354677394934",
+      "deviceStates": [
+        {
+          "device": "m1q",
+          "state": "PENDING"
+        }
+      ],
+      "outcome": "FAILURE",
+      "interpretation": "Inconclusive: staging permissions (EACCES), before inference"
+    }
+  ],
+  "note": "Reuses prior APKs with explicit Gemma 4 test targets and synthetic prompts. Models staged with --other-files before timed inference. No release eligibility changes.",
+  "stagedModelRoot": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/gemma4-staged-2026-09-25/",
+  "stagingFix": "Stage weights under /data/local/tmp and import using instrumentation shell access into app-owned internal storage; size and checksum checks retained.",
+  "correctedTests": [
+    {
+      "backend": "GPU",
+      "matrixId": "matrix-28jvwti7jl190",
+      "devices": [
+        "m1q API36",
+        "blazer API36"
+      ],
+      "state": "FINISHED",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/5602907906240795118",
+      "deviceStates": [
+        {
+          "device": "blazer",
+          "state": "FINISHED"
+        },
+        {
+          "device": "m1q",
+          "state": "FINISHED"
+        }
+      ],
+      "outcome": "FAILURE"
+    },
+    {
+      "backend": "NPU",
+      "matrixId": "matrix-1fcoetigmd91s",
+      "devices": [
+        "m1q API36"
+      ],
+      "state": "FINISHED",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/6518523641879792753",
+      "deviceStates": [
+        {
+          "device": "m1q",
+          "state": "FINISHED"
+        }
+      ],
+      "outcome": "SUCCESS"
+    }
+  ],
+  "correctedTestApk": {
+    "sha256": "481f8ea46a79527b2e2086f3fb05dda9b9d3ecb83f33497bd3c4c9a6148b1ee6",
+    "bytes": 80320
+  },
+  "results": {
+    "S26 GPU": "passed, median 39.8 decode tokens/sec, median first text 171ms",
+    "S26 NPU": "passed, HTP0 initialized, median first text 84ms",
+    "Pixel 10 Pro GPU": "failed at generation: exceeded 90 seconds after successful model initialization; remains excluded with current runtime"
+  }
+}

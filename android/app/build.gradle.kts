@@ -30,6 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "org.krak_en.voice"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 31
@@ -60,6 +61,7 @@ android {
     flavorDimensions += "env"
     productFlavors {
         create("qualification") {
+            externalNativeBuild { cmake { arguments += "-DKRAKEN_HARDWARE_PROBE=ON" } }
             dimension = "env"
             applicationIdSuffix = ".qualification"
             resValue("string", "app_name", "Krak-EN Hardware Test")
@@ -98,6 +100,8 @@ flutter {
 dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
     testImplementation("junit:junit:4.13.2")
+    // Match Flutter integration_test's existing Android runtime dependencies.
+    androidTestImplementation("androidx.test:runner:1.3.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
 }

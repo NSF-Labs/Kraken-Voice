@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'data/recording_repository.dart';
+import 'kernel/audio/transcription_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
@@ -30,6 +33,44 @@ void main() async {
   final audioEngine = AudioEngine();
   final voiceInputService = FasterWhisperVoiceInput(audioEngine);
   final entitlementService = EntitlementServiceImpl();
+  audioEngine.recordingLimitSeconds = () async {
+    await entitlementService.ready;
+    return entitlementService.isUnlocked('com.kraken.meeting_notes') ? 0 : 1200;
+  };
+  entitlementService.changes.listen((_) {
+    audioEngine.updateRecordingLimit(
+      entitlementService.isUnlocked('com.kraken.meeting_notes') ? 0 : 1200,
+    );
+  });
+  audioEngine.onBackgroundRecordingStopped = (path, durationMs) async {
+    if (!vaultService.isOpen)
+      return; // Breadcrumb recovery runs on next unlock.
+    final rows = await vaultService.db.query(
+      'recordings',
+      where: 'audio_path = ?',
+      whereArgs: [path],
+    );
+    if (rows.isEmpty) {
+      await FolderRepository(vaultService).createRecording(
+        title:
+            'Recording ${DateTime.now().toLocal().toString().substring(0, 16)}',
+        audioPath: path,
+        durationMs: durationMs,
+      );
+    }
+    final breadcrumb = File('$path.recording');
+    if (await breadcrumb.exists()) await breadcrumb.delete();
+    if (await PreferencesService().getString(
+          'transcription_preference',
+          defaultValue: 'ask',
+        ) ==
+        'auto') {
+      await TranscriptionEngine().queueJobWithDefaultLanguage(
+        vaultService,
+        path,
+      );
+    }
+  };
   final kernelContext = KernelContext(
     audio: audioEngine,
     inference: inferenceService,
@@ -41,7 +82,13 @@ void main() async {
     audit: AuditLog(),
   );
   final preferencesService = PreferencesService();
-  final retentionService = RetentionService(vaultService);
+  final retentionService = RetentionService(
+    vaultService,
+    isUnlimited: () async {
+      await entitlementService.ready;
+      return entitlementService.isUnlocked('com.kraken.meeting_notes');
+    },
+  );
 
   // Initialize system notifications
   await KrakenNotificationService().initialize();

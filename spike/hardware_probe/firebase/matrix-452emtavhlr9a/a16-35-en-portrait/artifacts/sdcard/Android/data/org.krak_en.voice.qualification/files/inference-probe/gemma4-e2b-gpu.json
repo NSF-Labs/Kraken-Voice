@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "MT6789V\/CD",
+  "model": "SM-A165M",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "passed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 5901996032,
+  "availableRamBeforeBytes": 2755100672,
+  "downloadBytes": 1979713180,
+  "downloadElapsedMs": 706189,
+  "loadMs": 12286,
+  "backendEvidence": "Explicit Backend.GPU initialized; consult native logs for driver execution",
+  "responses": [
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 1583,
+      "totalMs": 4961,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 6.08491671431221,
+      "pssKb": 1551173,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 1274,
+      "totalMs": 4704,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 6.042881427062969,
+      "pssKb": 1548281,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 1273,
+      "totalMs": 4713,
+      "prefillTokens": 53,
+      "decodeTokens": 22,
+      "decodeTokensPerSecond": 6.033145212927478,
+      "pssKb": 1548516,
+      "thermalStatus": 0
+    }
+  ]
+}

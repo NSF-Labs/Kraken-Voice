@@ -646,7 +646,7 @@ class _TranscriptScreenState extends State<TranscriptScreen>
                 }
               });
             },
-            child: const Text('Upgrade — \$19.95'),
+            child: const Text('Upgrade — \$4.95'),
           ),
         ],
       ),
@@ -1596,7 +1596,7 @@ Title:''';
   String? get _exportableTranscript {
     final text = _transcriptText;
     if (text == null || text.isEmpty) return text;
-    if (_diarizationSegments != null && _diarizationSegments!.isNotEmpty) {
+    if (kDiarizationEnabled && _diarizationSegments != null && _diarizationSegments!.isNotEmpty) {
       return KrakenExportService.injectSpeakerLabels(
         text,
         _diarizationSegments!,
@@ -2301,7 +2301,7 @@ Title:''';
       selected.values.where((v) => v).length;
 
   Future<void> _executeMultiFormatExport(Map<String, bool> selected) async {
-    final exportService = KrakenExportService();
+    final exportService = KrakenExportService(fullVersion: context.read<EntitlementService>().isUnlocked('com.kraken.meeting_notes'));
     final files = <XFile>[];
     final safeName = KrakenExportService.safeFileName(_currentTitle);
     final errors = <String>[];
@@ -2327,7 +2327,8 @@ Title:''';
       }
     }
 
-    final branding = BrandConfig(
+    final fullVersion = context.read<EntitlementService>().isUnlocked('com.kraken.meeting_notes');
+    final branding = !fullVersion ? const BrandConfig() : BrandConfig(
       logoBytes: logoBytes,
       headerText: headerText.isNotEmpty ? headerText : null,
       footerText: footerText.isNotEmpty ? footerText : null,
@@ -2343,6 +2344,7 @@ Title:''';
           transcriptText: _exportableTranscript,
           summaryJson: _summaryJson,
           branding: branding,
+          transcriptSegments: _transcriptSegments,
         );
         if (await pdfFile.exists()) files.add(XFile(pdfFile.path));
       } catch (e) {
@@ -2359,6 +2361,7 @@ Title:''';
           transcriptText: _exportableTranscript,
           summaryJson: _summaryJson,
           branding: branding,
+          transcriptSegments: _transcriptSegments,
         );
         if (await docxFile.exists()) files.add(XFile(docxFile.path));
       } catch (e) {

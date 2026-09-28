@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "SM8850",
+  "model": "SM-S942U1",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "failed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 11663118336,
+  "availableRamBeforeBytes": 5390147584,
+  "downloadBytes": 1543511940,
+  "downloadElapsedMs": 888451,
+  "failureStage": "download",
+  "error": "IllegalStateException: Download exceeded 15 minutes after 1561894788 bytes"
+}

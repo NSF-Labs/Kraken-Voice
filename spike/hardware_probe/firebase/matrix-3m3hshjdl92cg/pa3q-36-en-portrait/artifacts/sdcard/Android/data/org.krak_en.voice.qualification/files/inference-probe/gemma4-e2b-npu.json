@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-npu",
+  "model": "SM-S938U",
+  "soc": "SM8750",
+  "requestedBackend": "NPU",
+  "status": "passed",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "CPU host work and unsupported operations remain",
+  "stage": "complete",
+  "downloadBytes": 2617253826,
+  "downloadElapsedMs": 692397,
+  "loadMs": 3681,
+  "diagnostics": {
+    "initialized": true,
+    "runtime": "llama.cpp 0ef6e55",
+    "requestedBackend": "NPU",
+    "backendEvidence": "HTP0 required and initialized",
+    "cpuOnlyFallback": false,
+    "perOperatorCpuUsage": "CPU host work and unsupported operations remain",
+    "modelSha256": "e531007218dfab990486a5de7676a6932d6ea8dea233d1f698d7c21cf8a16889"
+  },
+  "responses": [
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 76,
+      "totalMs": 855,
+      "pssKb": 1921413,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 81,
+      "totalMs": 1031,
+      "pssKb": 1921233,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya approved a budget of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 85,
+      "totalMs": 1043,
+      "pssKb": 1921241,
+      "thermalStatus": 0
+    }
+  ]
+}

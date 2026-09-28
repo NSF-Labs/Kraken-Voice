@@ -1,0 +1,132 @@
+{
+  "date": "2026-09-24",
+  "project": "kraken-voice",
+  "discoveryMatrices": [
+    {
+      "id": "matrix-3p3vsy2l0san4",
+      "status": "FINISHED",
+      "outcome": "SUCCESS",
+      "devices": [
+        "m1q",
+        "pa3q",
+        "e3q"
+      ]
+    },
+    {
+      "id": "matrix-1vnmbfc0lk678",
+      "status": "FINISHED",
+      "outcome": "SUCCESS",
+      "devices": [
+        "a16x",
+        "a16"
+      ]
+    }
+  ],
+  "rejectedMatrix": {
+    "id": "matrix-32j6pkfaersjm",
+    "reason": "TEST_QUOTA_EXCEEDED"
+  },
+  "pendingDiscovery": [],
+  "cloudInference": "completed: alternate Gemma 4 GPU export passed Pixel 10 Pro and S26; S26 NPU regression passed",
+  "artifacts": {
+    "build/app/outputs/apk/qualification/debug/app-qualification-debug.apk": {
+      "sha256": "5902d2fb04b9454a5f5df08408d1e2e17a55aba5af4a6379ad00ae05027645a4",
+      "bytes": 125998138
+    },
+    "build/app/outputs/apk/androidTest/qualification/debug/app-qualification-debug-androidTest.apk": {
+      "sha256": "bb7f583e6dfa5d33577120285efed2453b8a72982ede8218283faa768321c674",
+      "bytes": 78268
+    }
+  },
+  "resumedMatrices": [
+    {
+      "id": "matrix-1kv1y8qv8ygkm",
+      "state": "FINISHED",
+      "outcome": "SUCCESS",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.5e07d20b87be7774/matrices/8039190514071463178"
+    },
+    {
+      "id": "matrix-1w3afptyvyrp3",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/7055091359072756451"
+    },
+    {
+      "id": "matrix-27nulnndb2bdv",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/7156399563536065339"
+    },
+    {
+      "id": "matrix-2xfg3wrckabr6",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/6141206234472505278"
+    },
+    {
+      "id": "matrix-398hlmqp1ap4c",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/7891022316726041833"
+    },
+    {
+      "id": "matrix-3jk50wrl2fi7d",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/6151786945863950032"
+    },
+    {
+      "id": "matrix-3m3hshjdl92cg",
+      "state": "FINISHED",
+      "outcome": "FAILURE",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.9be9137b2ee2a6b4/matrices/8009411612962717672"
+    },
+    {
+      "id": "matrix-452emtavhlr9a",
+      "state": "FINISHED",
+      "outcome": "SUCCESS",
+      "url": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/5662968265246320436"
+    }
+  ],
+  "gpuSmokePassed": [
+    "pa3q",
+    "e3q",
+    "dm3q",
+    "houji",
+    "caiman",
+    "a16",
+    "m1q",
+    "blazer"
+  ],
+  "npuSmokePassed": [
+    "pa3q",
+    "m1q"
+  ],
+  "inconclusiveModelDelivery": [],
+  "releaseEligibilityChanged": false,
+  "artifactNote": "Hashes identify the final local APKs. Individual matrix metadata retains immutable uploaded artifact URIs for initial and retry builds.",
+  "modelPolicy": {
+    "effectiveDate": "2026-09-25",
+    "model": "Gemma 4 E2B only",
+    "gemma3Tests": "cancelled by user; no longer a pending blocker",
+    "eligibility": "Devices unable to run Gemma 4 are excluded; no smaller-model fallback. Inconclusive or untested devices remain unqualified.",
+    "untested": "a16x 4GB Gemma 4 inference not run"
+  },
+  "latestRetryRecord": "portable-retry-2026-09-25.json",
+  "inferenceFailures": [
+    {
+      "device": "blazer / Pixel 10 Pro",
+      "backend": "GPU",
+      "stage": "generation",
+      "reason": "Generation exceeded 90 seconds after successful initialization",
+      "eligibility": "Still excluded from production pending performance, quality and sustained acceptance",
+      "resolution": "Alternate gemma4-e2b-portable-gpu passed matrix-2ateexz85mszl; original GPU-specific artifact remains unsuitable"
+    }
+  ],
+  "modelSpecificGpuPass": {
+    "blazer": "gemma4-e2b-portable-gpu"
+  },
+  "performanceLimits": {
+    "blazer": "median 1.9 decode tokens/sec, 35.55s load; not release-qualified"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-npu",
+  "model": "SM-S942U1",
+  "soc": "SM8850",
+  "requestedBackend": "NPU",
+  "status": "failed",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "CPU host work and unsupported operations remain",
+  "stage": "complete",
+  "failureStage": "download",
+  "error": "java.lang.IllegalStateException: Download timeout"
+}

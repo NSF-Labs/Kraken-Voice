@@ -1,0 +1,248 @@
+{
+  "complete": true,
+  "targetBytes": 3000000000,
+  "enforcedLimit": false,
+  "samples": [
+    {
+      "stage": "startup",
+      "availableMemoryBytes": 3488577768,
+      "mlxCacheBytes": 0,
+      "processFootprintBytes": 51414808,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 0,
+      "mlxPeakBytes": 0
+    },
+    {
+      "stage": "load",
+      "mlxActiveBytes": 0,
+      "mlxPeakBytes": 0,
+      "mlxCacheBytes": 0,
+      "availableMemoryBytes": 3438164176,
+      "physicalMemoryBytes": 8027406336,
+      "processFootprintBytes": 101828400
+    },
+    {
+      "stage": "load",
+      "mlxPeakBytes": 2604110610,
+      "mlxCacheBytes": 1048,
+      "physicalMemoryBytes": 8027406336,
+      "processFootprintBytes": 2074201368,
+      "availableMemoryBytes": 1465578216,
+      "mlxActiveBytes": 2604110610
+    },
+    {
+      "stage": "load",
+      "physicalMemoryBytes": 8027406336,
+      "availableMemoryBytes": 542322712,
+      "mlxPeakBytes": 2604110610,
+      "processFootprintBytes": 2997669864,
+      "mlxCacheBytes": 1048,
+      "mlxActiveBytes": 2604110610
+    },
+    {
+      "stage": "load",
+      "mlxPeakBytes": 2604110610,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2604110610,
+      "mlxCacheBytes": 1048,
+      "processFootprintBytes": 3101298688,
+      "availableMemoryBytes": 438693888
+    },
+    {
+      "stage": "summary-1",
+      "mlxPeakBytes": 2604110610,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2604110610,
+      "mlxCacheBytes": 1048,
+      "processFootprintBytes": 3101347840,
+      "availableMemoryBytes": 438644736
+    },
+    {
+      "stage": "summary-1",
+      "mlxActiveBytes": 2625907607,
+      "processFootprintBytes": 3255668760,
+      "mlxPeakBytes": 2671428177,
+      "physicalMemoryBytes": 8027406336,
+      "mlxCacheBytes": 53869448,
+      "availableMemoryBytes": 284323816
+    },
+    {
+      "stage": "summary-1",
+      "mlxActiveBytes": 2625926765,
+      "processFootprintBytes": 3148484632,
+      "mlxPeakBytes": 2671428177,
+      "physicalMemoryBytes": 8027406336,
+      "mlxCacheBytes": 52577274,
+      "availableMemoryBytes": 391507944
+    },
+    {
+      "stage": "summary-1",
+      "mlxActiveBytes": 2612080317,
+      "processFootprintBytes": 3148533784,
+      "mlxPeakBytes": 2671428177,
+      "physicalMemoryBytes": 8027406336,
+      "mlxCacheBytes": 66423722,
+      "availableMemoryBytes": 391458792
+    },
+    {
+      "stage": "summary-1",
+      "mlxActiveBytes": 2604110546,
+      "processFootprintBytes": 3089600512,
+      "mlxPeakBytes": 2671428177,
+      "physicalMemoryBytes": 8027406336,
+      "mlxCacheBytes": 7077888,
+      "availableMemoryBytes": 450392064
+    },
+    {
+      "stage": "summary-20",
+      "mlxActiveBytes": 2604110546,
+      "processFootprintBytes": 3089698816,
+      "mlxPeakBytes": 2671428177,
+      "physicalMemoryBytes": 8027406336,
+      "mlxCacheBytes": 7077888,
+      "availableMemoryBytes": 450293760
+    },
+    {
+      "stage": "summary-20",
+      "availableMemoryBytes": 406253568,
+      "processFootprintBytes": 3133739008,
+      "physicalMemoryBytes": 8027406336,
+      "mlxPeakBytes": 2671428177,
+      "mlxActiveBytes": 2650410826,
+      "mlxCacheBytes": 7704090
+    },
+    {
+      "stage": "summary-20",
+      "availableMemoryBytes": 409284608,
+      "processFootprintBytes": 3130707968,
+      "physicalMemoryBytes": 8027406336,
+      "mlxPeakBytes": 2702965030,
+      "mlxActiveBytes": 2615230156,
+      "mlxCacheBytes": 67069904
+    },
+    {
+      "stage": "summary-20",
+      "availableMemoryBytes": 419917824,
+      "processFootprintBytes": 3120074752,
+      "physicalMemoryBytes": 8027406336,
+      "mlxPeakBytes": 2702965030,
+      "mlxActiveBytes": 2616139596,
+      "mlxCacheBytes": 65727634
+    },
+    {
+      "stage": "summary-20",
+      "availableMemoryBytes": 478162944,
+      "processFootprintBytes": 3061829632,
+      "physicalMemoryBytes": 8027406336,
+      "mlxPeakBytes": 2702965030,
+      "mlxActiveBytes": 2604110546,
+      "mlxCacheBytes": 11010048
+    },
+    {
+      "stage": "summary-60",
+      "availableMemoryBytes": 477900800,
+      "processFootprintBytes": 3062091776,
+      "physicalMemoryBytes": 8027406336,
+      "mlxPeakBytes": 2702965030,
+      "mlxActiveBytes": 2604110546,
+      "mlxCacheBytes": 11010048
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2630093342,
+      "mlxCacheBytes": 2304722,
+      "processFootprintBytes": 3109097472,
+      "availableMemoryBytes": 430895104
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2656026318,
+      "mlxCacheBytes": 7633426,
+      "processFootprintBytes": 3115962368,
+      "availableMemoryBytes": 424030208
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2658061312,
+      "mlxCacheBytes": 6171360,
+      "processFootprintBytes": 3018117120,
+      "availableMemoryBytes": 521875456
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2637836922,
+      "mlxCacheBytes": 55859840,
+      "processFootprintBytes": 3047919616,
+      "availableMemoryBytes": 492072960
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2624812168,
+      "mlxCacheBytes": 65738754,
+      "processFootprintBytes": 3048001536,
+      "availableMemoryBytes": 491991040
+    },
+    {
+      "stage": "summary-60",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 2604110546,
+      "mlxCacheBytes": 19005440,
+      "processFootprintBytes": 2982694912,
+      "availableMemoryBytes": 557297664
+    },
+    {
+      "stage": "unload",
+      "mlxPeakBytes": 2702965030,
+      "physicalMemoryBytes": 8027406336,
+      "mlxActiveBytes": 4492,
+      "mlxCacheBytes": 0,
+      "processFootprintBytes": 353389248,
+      "availableMemoryBytes": 3186603328
+    }
+  ],
+  "cases": [
+    {
+      "notes": 1,
+      "inputTokens": 211,
+      "elapsedMs": 3317,
+      "output": "SUMMARY: The team approved a budget. The budget amount was 500 dollars.\n\nKEY POINTS: Alex will send the budget to Morgan on Friday. The approved budget is 500 dollars.\n\nDECISIONS: The team approved a 500 dollar budget.\n\nACTION ITEMS: Alex will send the budget to Morgan on Friday.\n\nOPEN QUESTIONS: None.",
+      "passed": true
+    },
+    {
+      "notes": 20,
+      "inputTokens": 735,
+      "elapsedMs": 3606,
+      "output": "SUMMARY: The team approved a budget of $500.\nKEY POINTS: Alex will send the budget to Morgan on Friday.\nDECISIONS: The team approved a $500 budget.\nACTION ITEMS: Alex will send the budget to Morgan on Friday.\nOPEN QUESTIONS: None",
+      "passed": true
+    },
+    {
+      "notes": 60,
+      "inputTokens": 1855,
+      "elapsedMs": 4767,
+      "output": "SUMMARY: Alex will send the budget to Morgan on Friday. The team approved a 500 dollar budget.\n\nKEY POINTS: The budget approval amount is 500 dollars.\n\nDECISIONS: The team approved a 500 dollar budget.\n\nACTION ITEMS: Alex will send the budget to Morgan on Friday.\n\nOPEN QUESTIONS: None",
+      "passed": true
+    }
+  ],
+  "model": {
+    "availableMemoryBytes": 3444537552,
+    "ready": true,
+    "progress": 0.0,
+    "supported": true,
+    "downloading": false,
+    "physicalMemoryBytes": 8027406336,
+    "error": null,
+    "reason": ""
+  },
+  "sampledPeakFootprintBytes": 3255668760
+}

@@ -18,6 +18,13 @@ import android.os.PowerManager
 
 class MainActivity: FlutterFragmentActivity() {
 
+    companion object {
+        private var retainedEngine: FlutterEngine? = null
+        private var retainedInference: InferenceBridge? = null
+    }
+    override fun provideFlutterEngine(context: android.content.Context): FlutterEngine? = retainedEngine
+    override fun shouldDestroyEngineWithHost() = false
+
     override fun onDestroy() {
         // Force-stop the recording service when the activity is destroyed
         // (e.g. user swiped the app from recents). This prevents the
@@ -28,7 +35,7 @@ class MainActivity: FlutterFragmentActivity() {
             }
             try { startService(intent) } catch (_: Exception) {}
         }
-        if (::inferenceBridge.isInitialized) inferenceBridge.close()
+        // The process-owned engine and inference bridge continue queued work.
         super.onDestroy()
     }
     private val INFERENCE_CHANNEL = "kraken.kernel/inference"
@@ -127,7 +134,19 @@ class MainActivity: FlutterFragmentActivity() {
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
+        if (retainedEngine == null) super.configureFlutterEngine(flutterEngine)
+        retainedEngine = flutterEngine
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kraken.kernel/processing")
+            .setMethodCallHandler { call, result ->
+                try {
+                    val intent = Intent(applicationContext, KrakenProcessingService::class.java)
+                    when (call.method) {
+                        "start" -> { ContextCompat.startForegroundService(applicationContext, intent); result.success(null) }
+                        "stop" -> { applicationContext.stopService(intent); result.success(null) }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) { result.error("PROCESSING_SERVICE", e.message, null) }
+            }
 
         // Cleanup any orphaned recording service from a previous session
         // (e.g. hot-reload or crash left the service running).
@@ -149,7 +168,7 @@ class MainActivity: FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kraken.kernel/documents")
             .setMethodCallHandler(DocumentTextHandler()::handle)
 
-        inferenceBridge = InferenceBridgeFactory.create(applicationContext)
+        inferenceBridge = retainedInference ?: InferenceBridgeFactory.create(applicationContext).also { retainedInference = it }
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, INFERENCE_STREAM_CHANNEL)
             .setStreamHandler(inferenceBridge)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, INFERENCE_CHANNEL)
@@ -234,7 +253,8 @@ class MainActivity: FlutterFragmentActivity() {
         // Wire notification callbacks from the service back to Flutter
         KrakenRecordingService.onNotificationStop = {
             Handler(Looper.getMainLooper()).post {
-                audioChannel.invokeMethod("onNotificationStop", null)
+                isRecording = false
+                audioChannel.invokeMethod("onNotificationStop", mapOf("durationMs" to KrakenRecordingService.lastDurationMs))
             }
         }
         KrakenRecordingService.onNotificationPause = {
@@ -246,6 +266,7 @@ class MainActivity: FlutterFragmentActivity() {
         audioChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startRecording" -> {
+                    KrakenRecordingService.limitSeconds = call.argument<Int>("limitSeconds") ?: 1200
                     detectSilenceFlag = call.argument<Boolean>("detectSilence") ?: false
                     silenceStartTime = 0L
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -254,6 +275,10 @@ class MainActivity: FlutterFragmentActivity() {
                     } else {
                         startAudioRecording(result)
                     }
+                }
+                "setRecordingLimit" -> {
+                    KrakenRecordingService.limitSeconds = call.argument<Int>("seconds") ?: 1200
+                    result.success(null)
                 }
                 "pauseRecording" -> {
                     val intent = Intent(this, KrakenRecordingService::class.java).apply {

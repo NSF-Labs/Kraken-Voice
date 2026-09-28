@@ -1,0 +1,29 @@
+{
+  "complete": true,
+  "targetBytes": 3000000000,
+  "enforcedLimit": false,
+  "samples": [
+    {
+      "stage": "startup",
+      "mlxActiveBytes": 0,
+      "mlxCacheBytes": 0,
+      "processFootprintBytes": 17811176,
+      "mlxPeakBytes": 0,
+      "physicalMemoryBytes": 4038508544,
+      "availableMemoryBytes": 2182084888
+    }
+  ],
+  "cases": [],
+  "model": {
+    "supported": false,
+    "error": null,
+    "reason": "This Gemma model needs at least 6 GB of device memory. Whisper transcription remains available.",
+    "progress": 0.0,
+    "ready": false,
+    "physicalMemoryBytes": 4038508544,
+    "availableMemoryBytes": 2160556288,
+    "downloading": false
+  },
+  "skipped": "Gemma is disabled on this device by the production RAM requirement.",
+  "sampledPeakFootprintBytes": 17811176
+}

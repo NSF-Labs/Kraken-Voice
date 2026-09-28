@@ -32,6 +32,7 @@ abstract class EntitlementService {
   EntitlementTier currentTier(String spokeId);
   Stream<EntitlementChangeEvent> get changes;
   Future<void> syncFromPlatform();
+
   /// Completes when initial entitlement data (including dev overrides) is loaded.
   Future<void> get ready;
 
@@ -43,13 +44,15 @@ abstract class EntitlementService {
 
   /// Whether the billing system is available.
   bool get isStoreAvailable;
+  String get fullUnlockPrice;
 
   /// Dispose of streams.
   void dispose();
 }
 
 class EntitlementServiceImpl implements EntitlementService {
-  final _changesController = StreamController<EntitlementChangeEvent>.broadcast();
+  final _changesController =
+      StreamController<EntitlementChangeEvent>.broadcast();
   final Map<String, EntitlementTier> _spokeTiers = {};
   late final Future<void> _readyFuture;
 
@@ -63,7 +66,10 @@ class EntitlementServiceImpl implements EntitlementService {
   static const String _purchasedKey = 'krak_en_purchased';
 
   EntitlementServiceImpl() {
-    _readyFuture = _initialize();
+    _readyFuture = _initialize().catchError((Object error) {
+      // Offline billing must not prevent trial recording or cached paid access.
+      print('[Entitlement] Store initialization unavailable: $error');
+    });
   }
 
   Future<void> _initialize() async {
@@ -102,6 +108,9 @@ class EntitlementServiceImpl implements EntitlementService {
 
   @override
   bool get isStoreAvailable => _storeAvailable;
+
+  @override
+  String get fullUnlockPrice => _fullUnlockProduct?.price ?? r'$4.95';
 
   @override
   Stream<EntitlementChangeEvent> get changes => _changesController.stream;
@@ -190,12 +199,14 @@ class EntitlementServiceImpl implements EntitlementService {
     if (oldTier == EntitlementTier.paid) return; // Already unlocked
 
     _spokeTiers[spokeId] = EntitlementTier.paid;
-    _changesController.add(EntitlementChangeEvent(
-      spokeId: spokeId,
-      oldTier: oldTier,
-      newTier: EntitlementTier.paid,
-      source: source,
-    ));
+    _changesController.add(
+      EntitlementChangeEvent(
+        spokeId: spokeId,
+        oldTier: oldTier,
+        newTier: EntitlementTier.paid,
+        source: source,
+      ),
+    );
 
     // Persist locally so next launch is instant
     _saveLocalPurchaseState();
@@ -222,16 +233,15 @@ class EntitlementServiceImpl implements EntitlementService {
   // ── Dev overrides (debug builds) ──────────────────────────────────────────
 
   Future<void> _loadDevEntitlements() async {
-    bool isDev = const bool.fromEnvironment('dart.vm.product') == false;
-    const String devFlag = String.fromEnvironment('KRAKEN_DEV', defaultValue: 'false');
-    if (devFlag == 'true') {
-      isDev = true;
-    }
-
+    const isDev =
+        bool.fromEnvironment('KRAKEN_DEV') &&
+        !bool.fromEnvironment('dart.vm.product');
     if (!isDev) return;
 
     try {
-      final jsonString = await rootBundle.loadString('assets/entitlements.dev.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/entitlements.dev.json',
+      );
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
       final unlockedList = data['unlocked_spokes'] as List<dynamic>?;
 
@@ -241,12 +251,14 @@ class EntitlementServiceImpl implements EntitlementService {
           if (_spokeTiers[id] != EntitlementTier.paid) {
             final oldTier = currentTier(id);
             _spokeTiers[id] = EntitlementTier.paid;
-            _changesController.add(EntitlementChangeEvent(
-              spokeId: id,
-              oldTier: oldTier,
-              newTier: EntitlementTier.paid,
-              source: EntitlementSource.dev,
-            ));
+            _changesController.add(
+              EntitlementChangeEvent(
+                spokeId: id,
+                oldTier: oldTier,
+                newTier: EntitlementTier.paid,
+                source: EntitlementSource.dev,
+              ),
+            );
           }
         }
       }

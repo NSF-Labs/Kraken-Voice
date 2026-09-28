@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Paired with Android ReleaseHardware/HexagonBridge. Other profiles require
 /// device validation before they can be selected; there is no CPU fallback.
 abstract final class ModelProfile {
-  static const build = '1.0.16+16';
+  static const build = '1.0.19+19';
   static String? _backend;
   static String? _profile;
   static bool get gpu {
@@ -25,8 +25,8 @@ abstract final class ModelProfile {
     final profile = native?['profile'];
     final validGpu =
         backend == 'GPU' &&
-        profile == 'gemma4-litert171-adreno750' &&
-        native?['modelFilename'] == 'gemma4-e2b-gpu.litertlm';
+        profile == 'gemma4-litert171-opencl-adreno750' &&
+        native?['modelFilename'] == 'gemma4-e2b-portable-gpu.litertlm';
     final validNpu =
         backend == 'NPU' &&
         (profile == 'gemma4-hexagon-v79' || profile == 'gemma4-hexagon-v81') &&
@@ -52,12 +52,13 @@ abstract final class ModelProfile {
   static String get label =>
       gpu ? 'Gemma 4 · Adreno GPU · S24' : 'Gemma 4 · Hexagon NPU';
   static const npuFilename = 'gemma4-e2b-w4.gguf';
-  static String get filename => gpu ? 'gemma4-e2b-gpu.litertlm' : npuFilename;
-  static int get bytes => gpu ? 2008432640 : 2620370976;
+  static String get filename =>
+      gpu ? 'gemma4-e2b-portable-gpu.litertlm' : npuFilename;
+  static int get bytes => gpu ? 2588147712 : 2620370976;
   static const contextWindow = 4096;
   static const maxOutputTokens = 2048;
   static String get url => gpu
-      ? 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it-gpu.litertlm'
+      ? 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it.litertlm'
       : 'https://huggingface.co/h2loop-ai/gemma-4-e2b-hexagon/'
             'resolve/1bb2044c313769541558f2c27fa67561894d0f26/gemma4-e2b-w4.gguf';
 }

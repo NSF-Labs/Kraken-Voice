@@ -1,0 +1,330 @@
+{
+  "testMatrixId": "matrix-1kv1y8qv8ygkm",
+  "testSpecification": {
+    "testTimeout": "120s",
+    "androidInstrumentationTest": {
+      "appApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug.apk"
+      },
+      "testApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug-androidTest.apk"
+      },
+      "appPackageId": "org.krak_en.voice.qualification",
+      "testPackageId": "org.krak_en.voice.qualification.test",
+      "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+      "testTargets": [
+        "class org.krak_en.voice.HardwareProbeTest"
+      ]
+    },
+    "testSetup": {
+      "directoriesToPull": [
+        "/sdcard/Android/data/org.krak_en.voice.qualification/files/hardware-probe"
+      ],
+      "account": {
+        "googleAuto": {}
+      }
+    },
+    "disableVideoRecording": true,
+    "disablePerformanceMetrics": true
+  },
+  "environmentMatrix": {
+    "androidDeviceList": {
+      "androidDevices": [
+        {
+          "androidModelId": "blazer",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        },
+        {
+          "androidModelId": "caiman",
+          "androidVersionId": "35",
+          "locale": "en",
+          "orientation": "portrait"
+        },
+        {
+          "androidModelId": "houji",
+          "androidVersionId": "35",
+          "locale": "en",
+          "orientation": "portrait"
+        },
+        {
+          "androidModelId": "dm3q",
+          "androidVersionId": "34",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      ]
+    }
+  },
+  "testExecutions": [
+    {
+      "id": "matrix-1kv1y8qv8ygkm_execution-1glrp84qt4f9a",
+      "testSpecification": {
+        "testTimeout": "120s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.HardwareProbeTest"
+          ]
+        },
+        "testSetup": {
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/hardware-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          }
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "dm3q",
+          "androidVersionId": "34",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-24T21:23:39.143122Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "Done. Test time = 1 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 3 (secs)"
+        ]
+      },
+      "matrixId": "matrix-1kv1y8qv8ygkm",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.5e07d20b87be7774",
+        "executionId": "8039190514071463178",
+        "stepId": "bs.152a01c218ba34dd"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    },
+    {
+      "id": "matrix-1kv1y8qv8ygkm_execution-23n6k6c5v03ip",
+      "testSpecification": {
+        "testTimeout": "120s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.HardwareProbeTest"
+          ]
+        },
+        "testSetup": {
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/hardware-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          }
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "blazer",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-24T21:23:39.143122Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "Done. Test time = 1 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 2 (secs)"
+        ]
+      },
+      "matrixId": "matrix-1kv1y8qv8ygkm",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.5e07d20b87be7774",
+        "executionId": "8039190514071463178",
+        "stepId": "bs.eff8866fe20b5514"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    },
+    {
+      "id": "matrix-1kv1y8qv8ygkm_execution-2v5ey9p7drfua",
+      "testSpecification": {
+        "testTimeout": "120s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.HardwareProbeTest"
+          ]
+        },
+        "testSetup": {
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/hardware-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          }
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "houji",
+          "androidVersionId": "35",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-24T21:23:39.143122Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "Done. Test time = 1 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 3 (secs)"
+        ]
+      },
+      "matrixId": "matrix-1kv1y8qv8ygkm",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.5e07d20b87be7774",
+        "executionId": "8039190514071463178",
+        "stepId": "bs.9c759edc22e8f427"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    },
+    {
+      "id": "matrix-1kv1y8qv8ygkm_execution-3hziisq205vcn",
+      "testSpecification": {
+        "testTimeout": "120s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.HardwareProbeTest"
+          ]
+        },
+        "testSetup": {
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/hardware-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          }
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "caiman",
+          "androidVersionId": "35",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-24T21:23:39.143122Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "Done. Test time = 1 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 4 (secs)"
+        ]
+      },
+      "matrixId": "matrix-1kv1y8qv8ygkm",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.5e07d20b87be7774",
+        "executionId": "8039190514071463178",
+        "stepId": "bs.fe1451796f928a88"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    }
+  ],
+  "resultStorage": {
+    "googleCloudStorage": {
+      "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-24_17:20:38.456197_gXKS/"
+    },
+    "toolResultsHistory": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.5e07d20b87be7774"
+    },
+    "toolResultsExecution": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.5e07d20b87be7774",
+      "executionId": "8039190514071463178"
+    },
+    "resultsUrl": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.5e07d20b87be7774/matrices/8039190514071463178"
+  },
+  "projectId": "kraken-voice",
+  "state": "FINISHED",
+  "timestamp": "2026-09-24T21:23:39.143122Z",
+  "clientInfo": {
+    "name": "gcloud",
+    "clientInfoDetails": [
+      {
+        "key": "Cloud SDK Version",
+        "value": "586.0.0"
+      },
+      {
+        "key": "Release Track",
+        "value": "GA"
+      }
+    ]
+  },
+  "outcomeSummary": "SUCCESS"
+}

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "SM8650",
+  "model": "SM-S928U1",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "failed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 11624300544,
+  "availableRamBeforeBytes": 4926746624,
+  "failureStage": "download",
+  "error": "IllegalStateException: Download exceeded eight minutes"
+}

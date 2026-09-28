@@ -68,3 +68,10 @@ integration_test/test_audio/Mom.m4a
 **/jniLibs/**/libQnn*.so
 spike/**/assets/qnn/
 spike/**/local.properties
+
+# Downloaded Firebase device logs remain local; JSON evidence is tracked.
+/spike/hardware_probe/firebase/**/logcat
+
+/.venv-play/
+
+/.secrets/

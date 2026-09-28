@@ -56,8 +56,8 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
     override fun handle(call: MethodCall, result: MethodChannel.Result) {
         if (call.method == "deviceSupport") {
             result.success(mapOf("supported" to supported(), "soc" to Build.SOC_MODEL,
-                "backend" to "GPU", "profile" to "gemma4-litert171-adreno750",
-                "modelFilename" to "gemma4-e2b-gpu.litertlm", "contextWindow" to 4096,
+                "backend" to "GPU", "profile" to "gemma4-litert171-opencl-adreno750",
+                "modelFilename" to "gemma4-e2b-portable-gpu.litertlm", "contextWindow" to 4096,
                 "build" to ReleaseHardware.BUILD, "tokenBudget" to "utf8-upper-bound"))
             return
         }
@@ -84,7 +84,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
                             // Establish a baseline before enabling speculative decoding.
                             ExperimentalFlags.enableSpeculativeDecoding = false
                             val next = Engine(EngineConfig(modelPath = path, backend = Backend.GPU(),
-                                maxNumTokens = 4096, cacheDir = File(context.cacheDir, "litert171_gpu").apply { mkdirs() }.path))
+                                maxNumTokens = 4096, cacheDir = File(context.cacheDir, "litert171_opencl_gpu").apply { mkdirs() }.path))
                             try { next.initialize() } catch (e: Throwable) {
                                 if (next.isInitialized()) next.close()
                                 throw e
@@ -179,7 +179,7 @@ class LiteRtGpuBridge(private val context: Context) : InferenceBridge {
     }
     companion object {
         const val TAG = "KrakenGPU"
-        const val MODEL_BYTES = 2008432640L
-        const val MODEL_SHA = "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5"
+        const val MODEL_BYTES = 2588147712L
+        const val MODEL_SHA = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
     }
 }

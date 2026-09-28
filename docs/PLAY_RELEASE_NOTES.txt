@@ -1,0 +1,1 @@
+Improved Galaxy S24 AI summary quality with the updated Gemma 4 GPU model. Transcription and summaries continue in the background, and saved summaries persist after restarting the app. Updated Google Play billing support. Trial recordings allow up to 20 minutes, with a one-time full-version unlock.

@@ -1,0 +1,264 @@
+{
+  "testMatrixId": "matrix-r4d3w3e1o1c1a",
+  "testSpecification": {
+    "testTimeout": "720s",
+    "androidInstrumentationTest": {
+      "appApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug.apk"
+      },
+      "testApk": {
+        "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug-androidTest.apk"
+      },
+      "appPackageId": "org.krak_en.voice.qualification",
+      "testPackageId": "org.krak_en.voice.qualification.test",
+      "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+      "testTargets": [
+        "class org.krak_en.voice.InferenceProbeTest"
+      ]
+    },
+    "testSetup": {
+      "filesToPush": [
+        {
+          "regularFile": {
+            "content": {
+              "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+            },
+            "devicePath": "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+          }
+        }
+      ],
+      "directoriesToPull": [
+        "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe"
+      ],
+      "account": {
+        "googleAuto": {}
+      },
+      "environmentVariables": [
+        {
+          "key": "runInference",
+          "value": "true"
+        },
+        {
+          "key": "modelCandidate",
+          "value": "gemma4-e2b-gpu"
+        }
+      ]
+    },
+    "disableVideoRecording": true,
+    "disablePerformanceMetrics": true
+  },
+  "environmentMatrix": {
+    "androidDeviceList": {
+      "androidDevices": [
+        {
+          "androidModelId": "blazer",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        },
+        {
+          "androidModelId": "m1q",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      ]
+    }
+  },
+  "testExecutions": [
+    {
+      "id": "matrix-r4d3w3e1o1c1a_execution-15q5ilz6c40x7",
+      "testSpecification": {
+        "testTimeout": "720s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.InferenceProbeTest"
+          ]
+        },
+        "testSetup": {
+          "filesToPush": [
+            {
+              "regularFile": {
+                "content": {
+                  "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+                },
+                "devicePath": "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+              }
+            }
+          ],
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          },
+          "environmentVariables": [
+            {
+              "key": "runInference",
+              "value": "true"
+            },
+            {
+              "key": "modelCandidate",
+              "value": "gemma4-e2b-gpu"
+            }
+          ]
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "blazer",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-25T15:06:44.695030Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "A non-retryable error occurred.",
+          "Done. Test time = 2 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 2 (secs)"
+        ],
+        "errorMessage": "A non-retryable error occurred."
+      },
+      "matrixId": "matrix-r4d3w3e1o1c1a",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.81b3818b1d32cae9",
+        "executionId": "7202547094223753459",
+        "stepId": "bs.97e6bd18c1ba5018"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    },
+    {
+      "id": "matrix-r4d3w3e1o1c1a_execution-1y9j1jt4sodze",
+      "testSpecification": {
+        "testTimeout": "720s",
+        "androidInstrumentationTest": {
+          "appApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug.apk"
+          },
+          "testApk": {
+            "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/app-qualification-debug-androidTest.apk"
+          },
+          "appPackageId": "org.krak_en.voice.qualification",
+          "testPackageId": "org.krak_en.voice.qualification.test",
+          "testRunnerClass": "androidx.test.runner.AndroidJUnitRunner",
+          "testTargets": [
+            "class org.krak_en.voice.InferenceProbeTest"
+          ]
+        },
+        "testSetup": {
+          "filesToPush": [
+            {
+              "regularFile": {
+                "content": {
+                  "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+                },
+                "devicePath": "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-models/gemma4-e2b-gpu.litertlm"
+              }
+            }
+          ],
+          "directoriesToPull": [
+            "/sdcard/Android/data/org.krak_en.voice.qualification/files/inference-probe"
+          ],
+          "account": {
+            "googleAuto": {}
+          },
+          "environmentVariables": [
+            {
+              "key": "runInference",
+              "value": "true"
+            },
+            {
+              "key": "modelCandidate",
+              "value": "gemma4-e2b-gpu"
+            }
+          ]
+        },
+        "disableVideoRecording": true,
+        "disablePerformanceMetrics": true
+      },
+      "environment": {
+        "androidDevice": {
+          "androidModelId": "m1q",
+          "androidVersionId": "36",
+          "locale": "en",
+          "orientation": "portrait"
+        }
+      },
+      "state": "FINISHED",
+      "timestamp": "2026-09-25T15:06:44.695030Z",
+      "testDetails": {
+        "progressMessages": [
+          "Starting attempt 1.",
+          "A non-retryable error occurred.",
+          "Done. Test time = 2 (secs)",
+          "Starting results processing. Attempt: 1",
+          "Completed results processing. Time taken = 3 (secs)"
+        ],
+        "errorMessage": "A non-retryable error occurred."
+      },
+      "matrixId": "matrix-r4d3w3e1o1c1a",
+      "projectId": "kraken-voice",
+      "toolResultsStep": {
+        "projectId": "kraken-voice",
+        "historyId": "bh.81b3818b1d32cae9",
+        "executionId": "7202547094223753459",
+        "stepId": "bs.26db0ee47e0faad7"
+      },
+      "shard": {
+        "numShards": 1
+      }
+    }
+  ],
+  "resultStorage": {
+    "googleCloudStorage": {
+      "gcsPath": "gs://test-lab-hj0k59sbdp2xk-htf793v23x37a/2026-09-25_11:06:42.733710_MmIL/"
+    },
+    "toolResultsHistory": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.81b3818b1d32cae9"
+    },
+    "toolResultsExecution": {
+      "projectId": "kraken-voice",
+      "historyId": "bh.81b3818b1d32cae9",
+      "executionId": "7202547094223753459"
+    },
+    "resultsUrl": "https://console.firebase.google.com/project/kraken-voice/testlab/histories/bh.81b3818b1d32cae9/matrices/7202547094223753459"
+  },
+  "projectId": "kraken-voice",
+  "state": "FINISHED",
+  "timestamp": "2026-09-25T15:06:44.695030Z",
+  "clientInfo": {
+    "name": "gcloud",
+    "clientInfoDetails": [
+      {
+        "key": "Cloud SDK Version",
+        "value": "586.0.0"
+      },
+      {
+        "key": "Release Track",
+        "value": "GA"
+      }
+    ]
+  },
+  "outcomeSummary": "FAILURE"
+}

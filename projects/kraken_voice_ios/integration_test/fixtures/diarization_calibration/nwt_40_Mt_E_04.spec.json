@@ -1,0 +1,4 @@
+{
+  "expected_speakers": 3,
+  "notes": "3-speaker reference. Tuning runs (Apr 2026) showed: defaults (threshold=0.75 auto) detect 6 raw / 4 post; threshold sweeps stay at 4 post until 0.90, where it lands at 3; forcing num_speakers=3 produces the cleanest split (raw=3, post=3, share 65/29/6). Recommendation: rely on the 'Default expected speakers' setting + in-recording chip, not threshold tuning."
+}

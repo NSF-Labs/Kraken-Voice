@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "modelCandidate": "gemma4-e2b-gpu",
+  "soc": "SM8650",
+  "model": "23127PN0CG",
+  "requestedBackend": "GPU",
+  "cpuOnlyFallback": false,
+  "perOperatorCpuUsage": "Not measured",
+  "status": "passed",
+  "modelSha256": "a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5",
+  "stage": "complete",
+  "totalRamBytes": 11711025152,
+  "availableRamBeforeBytes": 5564624896,
+  "loadMs": 7884,
+  "backendEvidence": "Explicit Backend.GPU initialized; consult native logs for driver execution",
+  "responses": [
+    {
+      "text": "Maya has approved an amount of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 323,
+      "totalMs": 978,
+      "prefillTokens": 53,
+      "decodeTokens": 23,
+      "decodeTokensPerSecond": 30.131991235578454,
+      "pssKb": 1197671,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya has approved an amount of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 197,
+      "totalMs": 828,
+      "prefillTokens": 53,
+      "decodeTokens": 23,
+      "decodeTokensPerSecond": 32.97311060606883,
+      "pssKb": 1192191,
+      "thermalStatus": 0
+    },
+    {
+      "text": "Maya has approved an amount of $42,750 with a deadline of October 16.",
+      "correctFacts": true,
+      "firstTextMs": 222,
+      "totalMs": 855,
+      "prefillTokens": 53,
+      "decodeTokens": 23,
+      "decodeTokensPerSecond": 31.8653527358843,
+      "pssKb": 1192387,
+      "thermalStatus": 0
+    }
+  ]
+}

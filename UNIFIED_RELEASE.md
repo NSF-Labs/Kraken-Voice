@@ -1,5 +1,13 @@
 # Unified Android build 1.0.16+16
 
+## Model policy — September 25, 2026
+
+Gemma 4 E2B is the only supported model family for device qualification and
+release. Gemma 3 testing is cancelled. Devices that cannot run Gemma 4 are
+excluded; there is no smaller-model fallback. Untested devices and download-only
+failures remain unqualified, not proven incompatible. A short inference pass
+does not replace quality, memory and sustained thermal acceptance.
+
 One APK/AAB includes LiteRT-LM 0.17.1 GPU and llama.cpp Hexagon runtimes.
 The native factory chooses one backend before Flutter starts. Dart validates
 that selection and uses only its pinned model filename, size and download URL.
