@@ -11,3 +11,19 @@ ios/Flutter/flutter_export_environment.sh
 
 assets/models/*.bin
 assets/models/*.part
+
+# Local recordings, credentials, and generated files
+integration_test/test_audio/Mom.m4a
+.secrets/
+.env
+*.p8
+*.p12
+*.mobileprovision
+*.log
+*.pyc
+__pycache__/
+
+# Local App Store API responses and private review recordings
+release/**/*.json
+release/*.json
+release/review-response/

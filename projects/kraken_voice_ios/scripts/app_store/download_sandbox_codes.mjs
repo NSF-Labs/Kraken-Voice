@@ -1,0 +1,11 @@
+import {api} from './api.mjs';
+import {readFileSync,writeFileSync,mkdirSync,chmodSync} from 'node:fs';
+import {homedir} from 'node:os';
+const c=JSON.parse(readFileSync(new URL('../../release/app-store-setup.json',import.meta.url)));
+if(!c.offer.sandboxBatchId) throw new Error('No sandbox batch exists');
+const values=await api('GET',`/v1/inAppPurchaseOfferCodeOneTimeUseCodes/${c.offer.sandboxBatchId}/values`);
+if(typeof values.text!=='string' || !values.text.trim()) throw new Error('Apple did not return the CSV');
+const dir=homedir()+'/.appstoreconnect/offer-codes';mkdirSync(dir,{recursive:true,mode:0o700});
+const file=dir+'/kraken-voice-sandbox-'+c.offer.sandboxBatchId+'.csv';
+writeFileSync(file,values.text,{mode:0o600});chmodSync(file,0o600);
+console.log('Sandbox code CSV saved privately:',file);

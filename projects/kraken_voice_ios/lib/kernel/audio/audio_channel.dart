@@ -1,3 +1,5 @@
+import 'microphone_level.dart';
+import '../entitlements/creation_access.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -87,14 +89,18 @@ class AudioEngine {
     }
   }
 
+  /// Microphone power in dBFS on every platform (-160 = silence, 0 = full scale).
   Stream<double> get amplitudeStream {
     _amplitudeStream ??= _amplitudeEventChannel.receiveBroadcastStream().map(
-      (event) => (event as num).toDouble(),
+      (event) => microphoneDecibels(
+        (event as num).toDouble(), isDecibels: Platform.isIOS,
+      ),
     );
     return _amplitudeStream!;
   }
 
   Future<String?> startRecording({bool detectSilence = false}) async {
+    await CreationAccess.require();
     try {
       final path = await _channel.invokeMethod<String>('startRecording', {
         'detectSilence': detectSilence,

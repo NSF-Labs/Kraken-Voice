@@ -60,16 +60,22 @@ class _AiChatBarState extends State<AiChatBar>
       curve: Curves.easeOutCubic,
     );
     _controller.addListener(() => setState(() {}));
+    _focusNode.addListener(_onFocusChanged);
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
     _generationSub?.cancel();
     _sheetAnimController.dispose();
     _sourceRecordingIds.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    setState(() {});
   }
 
   void _submit() {
@@ -326,6 +332,7 @@ class _AiChatBarState extends State<AiChatBar>
   }
 
   void _dismissSheet() {
+    _focusNode.unfocus();
     _sheetAnimController.reverse().then((_) {
       if (mounted) setState(() => _showSheet = false);
     });
@@ -495,6 +502,21 @@ class _AiChatBarState extends State<AiChatBar>
                   ),
                 ),
               ],
+            ),
+          ),
+
+        // Keep dismissal available even before a conversation exists.
+        if (_focusNode.hasFocus)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _focusNode.unfocus(),
+              icon: const Icon(Icons.keyboard_hide_rounded, size: 20),
+              label: const Text('Hide keyboard'),
+              style: TextButton.styleFrom(
+                foregroundColor: KrakenColors.accent,
+                minimumSize: const Size(48, 48),
+              ),
             ),
           ),
 
@@ -874,6 +896,7 @@ class _AiChatBarState extends State<AiChatBar>
                       child: TextField(
                         controller: _controller,
                         focusNode: _focusNode,
+                        onTapOutside: (_) => _focusNode.unfocus(),
                         style: KrakenText.bodySm(),
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _submit(),

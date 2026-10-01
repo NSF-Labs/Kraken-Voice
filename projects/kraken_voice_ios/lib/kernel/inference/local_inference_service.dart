@@ -1,3 +1,4 @@
+import '../entitlements/creation_access.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:krak_en_voice/kernel/inference/model_profile.dart';
@@ -160,6 +161,7 @@ class LocalInferenceService {
       final releaseSlot = await _acquireSlot();
       try {
         if (cancelled) return;
+        await CreationAccess.require();
         inner =
             _rawGenerateStream(
               prompt,

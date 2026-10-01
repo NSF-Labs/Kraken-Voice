@@ -110,7 +110,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Private voice recording\nand offline transcription.\niOS preview',
+                    'Private voice recording\nand offline transcription.',
                     style: TextStyle(
                       fontSize: 18,
                       height: 1.6,

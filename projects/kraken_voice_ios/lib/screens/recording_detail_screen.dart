@@ -1,3 +1,5 @@
+import '../kernel/entitlements/ios_entitlement_service.dart';
+import '../widgets/ios_purchase_dialog.dart';
 import '../kernel/model_readiness_service.dart';
 import 'package:krak_en_voice/app/share_anchor.dart';
 import 'package:krak_en_voice/inference/model_file_downloader.dart';
@@ -594,6 +596,11 @@ class _TranscriptScreenState extends State<TranscriptScreen>
 
   /// Show upgrade prompt when free user tries to access speaker detection.
   void _showDiarizationUpgradePrompt() {
+    final store = context.read<EntitlementService>();
+    if (store is IOSEntitlementService) {
+      showIOSPurchaseDialog(context, store);
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -648,7 +655,7 @@ class _TranscriptScreenState extends State<TranscriptScreen>
                 }
               });
             },
-            child: const Text('Upgrade — \$4.95'),
+            child: Text('Unlock — ${context.read<EntitlementService>().fullUnlockPrice}'),
           ),
         ],
       ),

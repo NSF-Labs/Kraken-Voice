@@ -1,0 +1,47 @@
+PRIVACY POLICY — KRAK-EN QUOTES
+NSF Labs • Version prepared September 30, 2026
+Website: https://nsflabs.org
+Privacy and support: info@nsflabs.org
+
+1. What this policy covers
+NSF Labs publishes Krak-EN Quotes, a field sales, customer-management, and quoting app for Android, iPhone, and iPad. This policy describes the app, optional network features, purchases, exports, and support. The public guide and policy are also available at nsflabs.org. Platform-specific features are identified below.
+
+2. Information you keep in the app
+You may enter or import company details and a logo; customer and contact names, business addresses, phone numbers, emails, websites, and account notes; price books, SKUs, discounts, payment terms, quotes, visit notes, reminders, and goals. The app stores these records, template choices, settings, local audit entries, and trial/purchase state in its private device storage. Files you select are read to provide the requested import or branding feature. The app does not require an NSF Labs account.
+
+Your business records are not automatically uploaded to an NSF Labs database. On supported Android devices, AI prompts, selected business context, and AI responses are processed on the device, not sent to a hosted AI service. We do not use them to train a cloud model. Treat AI output as a draft and check it before use. The iPhone and iPad version does not include AI inference or AI model downloads.
+
+3. When information can leave the device
+• Android AI model downloads: downloading or updating model files contacts Hugging Face and its delivery infrastructure. Those services receive ordinary request information, such as your IP address and requested file. Quote content and customer records are not part of the model download request.
+• Optional Google address lookup: this feature is off until you explicitly allow it in Settings > Privacy Policy. When enabled, customer street addresses, cities, states, and ZIP codes can be sent to Google Maps for coordinates, including existing addresses and subsequent imports or edits. Google receives network request information. Names, notes, and quote prices are not included by this feature. Turning it off stops new lookups; an already-sent request cannot be recalled. Coordinates already saved remain until the associated records or app data are deleted. Ordinary customer search does not require this service.
+• Sharing, email, printing, browser, maps, and calendar: when you choose these actions, the selected content passes to your selected app, printer, browser, mapping service, calendar, or recipient. That provider may upload or synchronize it under its own settings and policy. Review the destination and content before confirming. The app does not send email without your action in the chosen email application.
+• Purchases: Google Play on Android and Apple App Store on iOS process payment and purchase restoration. Apple also verifies activation of the free iOS trial. The app receives product and transaction information needed to verify and remember your Pro entitlement. NSF Labs does not receive your payment card details through the app. The store provider may make sales, order, and financial records available to NSF Labs through its developer services.
+• Support and feedback: if you send email to NSF Labs, we receive your email address, message, and attachments you choose to send. Review diagnostics or screenshots and remove customer information that is not needed.
+• Online help: opening nsflabs.org or a download contacts the website host, which may process IP addresses and access/security logs to deliver and protect the site. The downloadable and bundled guides can be read offline.
+
+Relevant provider policies: Google — https://policies.google.com/privacy ; Apple — https://www.apple.com/legal/privacy/ ; Hugging Face — https://huggingface.co/privacy . External apps and services have their own privacy practices. NSF Labs must ensure any processors it appoints to handle personal data on its behalf are contractually required to protect it appropriately.
+
+4. Advertising and tracking
+The app contains no advertising, analytics, or automatic crash-reporting SDKs. NSF Labs does not sell your app records or use them for targeted advertising. We do not use advertising identifiers to track users across apps or websites. Platform services may independently process diagnostic or store information according to your platform settings.
+
+5. Permissions and controls
+The system file picker gives access to files you choose. Notification permission supports local reminders; you can decline or revoke it in your device settings. On iPhone and iPad, you can select a photo for your company logo. If you choose to add a calendar event, the app opens Apple’s calendar editor; older iOS versions may ask for calendar access. Apple’s calendar editor may suggest contacts. The app does not import your device contact book into its customer database. The app uses network access for the purposes above. It does not request microphone, camera, or live device-location access for quoting. Choosing an external app may involve permissions controlled by that app.
+
+6. Storage, protection, and backup
+Business records are stored in an ordinary SQLite database inside the app’s private sandbox. The app does not add a separate database-encryption layer; device encryption and access controls are provided by the operating system and your device configuration. Use a screen lock, keep the device updated, and protect exported files. No system can guarantee absolute security, particularly on a compromised or unlocked device.
+
+On Android, this version excludes its private data from automatic cloud backup and device-transfer rules. On iPhone and iPad, the app marks its Documents and Application Support directories to be excluded from device backups; system preferences and files outside those directories may follow Apple’s backup settings. Exports and copies saved to external locations are outside those rules. There is no NSF Labs cloud backup or remote recovery of your customer database. Uninstalling or clearing app storage can permanently remove your local records. Keep exports before changing devices. CSV exports are data exports, not a promised one-click full restore.
+
+7. Retention and deletion
+Local records remain until you delete them, clear the app's storage, or uninstall the app. Some operational history, generated files, and local audit entries may remain after deleting an individual record; clearing app storage removes the app's local copy. Deleting app data does not remove original spreadsheets, exports, sent emails, calendar events, files saved elsewhere, or copies held by recipients. Delete those separately through the relevant service. App deletion does not cancel or erase a completed store purchase; purchase and legally required financial records follow the store's retention rules.
+
+NSF Labs retains support correspondence only as needed to answer the request, address related issues, and meet legal obligations. Purchase and business records are retained as needed for accounting, dispute handling, and applicable legal requirements. You may request deletion of information NSF Labs holds by emailing info@nsflabs.org; we will explain any legal reason that prevents immediate deletion. We cannot remotely inspect or delete a database that stays solely on your phone.
+
+8. Your choices and rights
+You can use quoting without optional address lookup, decline notifications, choose whether and where to share, export records through Settings > Data Inventory, delete local records, and contact NSF Labs about access, correction, deletion, or privacy concerns. Depending on your location, you may have additional rights, including restrictions on processing or complaints to a privacy regulator. We will handle requests under applicable law and may need to verify your identity. Do not send your entire customer database for a routine support request.
+
+9. Children and business records
+The app is designed for adult business users and is not directed to children under 13. Do not enter information you are not authorized to use. If you believe a child has sent personal information to NSF Labs, contact us so we can address it.
+
+10. Changes and contact
+We will update the version date when this policy changes. Material changes to optional data transmission require appropriate notice and, where needed, renewed consent. The current policy will be published at https://nsflabs.org/quotes/privacy-policy.html . Contact NSF Labs at info@nsflabs.org with questions or requests.

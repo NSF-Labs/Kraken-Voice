@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'docx_extractor.dart';
 
 class ExtractedDocument {
   final String text;
@@ -10,6 +13,12 @@ class DocumentExtractor {
   static const _channel = MethodChannel('kraken.kernel/documents');
   Future<ExtractedDocument> extract(String path) async {
     try {
+      if (Platform.isIOS && path.toLowerCase().endsWith('.docx')) {
+        return ExtractedDocument(
+          await compute(extractDocxText, path),
+          'Word import includes body text and tables. Images, comments, headers, footers and footnotes are not included.',
+        );
+      }
       final data = await _channel.invokeMapMethod<String, dynamic>('extract', {
         'path': path,
       });

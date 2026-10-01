@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Kraken Voice iOS</string>
+	<string>Krak-EN Voice</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>The photo picker can include the capture location with photos you choose to import. Location is not required for recording or transcription.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Link recordings to your calendar events.</string>
 	<key>NSCalendarsUsageDescription</key>

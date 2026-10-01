@@ -1,3 +1,5 @@
+import 'kernel/entitlements/ios_entitlement_service.dart';
+import 'kernel/entitlements/creation_access.dart';
 import 'dart:io';
 import 'kernel/audio/whisper_model_file.dart';
 import 'kernel/model_readiness_service.dart';
@@ -42,7 +44,14 @@ Future<void> main() async {
   final inferenceService = LocalInferenceService();
   final audioEngine = AudioEngine();
   final voiceInputService = FasterWhisperVoiceInput(audioEngine);
-  final entitlementService = EntitlementServiceImpl();
+  final EntitlementService entitlementService = Platform.isIOS
+      ? IOSEntitlementService() : EntitlementServiceImpl();
+  if (entitlementService is IOSEntitlementService) {
+    CreationAccess.check = () async {
+      await entitlementService.ready;
+      return entitlementService.canCreate;
+    };
+  }
   audioEngine.recordingLimitSeconds = () async {
     await entitlementService.ready;
     return entitlementService.isUnlocked('com.kraken.meeting_notes') ? 0 : 1200;
@@ -70,7 +79,7 @@ Future<void> main() async {
     }
     final breadcrumb = File('$path.recording');
     if (await breadcrumb.exists()) await breadcrumb.delete();
-    if ((!Platform.isIOS || ModelReadinessService().canTranscribe) && await PreferencesService().getString(
+    if ((entitlementService is! IOSEntitlementService || entitlementService.canCreate) && (!Platform.isIOS || ModelReadinessService().canTranscribe) && await PreferencesService().getString(
           'transcription_preference',
           defaultValue: 'ask',
         ) ==
@@ -96,7 +105,7 @@ Future<void> main() async {
     vaultService,
     isUnlimited: () async {
       await entitlementService.ready;
-      return entitlementService.isUnlocked('com.kraken.meeting_notes');
+      return Platform.isIOS || entitlementService.isUnlocked('com.kraken.meeting_notes');
     },
   );
 

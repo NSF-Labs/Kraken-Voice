@@ -1,3 +1,5 @@
+import '../kernel/entitlements/ios_entitlement_service.dart';
+import '../widgets/ios_purchase_dialog.dart';
 import '../app/ios_gemma_model.dart';
 import 'package:krak_en_voice/app/share_anchor.dart';
 import 'dart:async';
@@ -584,6 +586,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
 
                 // ─── About ──────────────────────────────────────────
+                if (context.read<EntitlementService>() is IOSEntitlementService)
+                  _buildSettingsCard(child: ListTile(
+                    leading: const Icon(Icons.lock_open),
+                    title: const Text('Trial & Lifetime Unlock'),
+                    subtitle: const Text('Purchase, restore or redeem an offer code'),
+                    onTap: () => showIOSPurchaseDialog(context, context.read<EntitlementService>() as IOSEntitlementService),
+                  )),
+                _buildSettingsCard(child: ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy Policy'),
+                  onTap: () async {
+                    if (!await launchUrl(Uri.parse(kPrivacyPolicyUrl), mode: LaunchMode.externalApplication) && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the privacy policy.')));
+                    }
+                  },
+                )),
                 _buildSectionTitle('About'),
                 _buildSettingsCard(
                   child: Column(
@@ -614,7 +632,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: _reportBug,
                       ),
                       const Divider(color: Colors.white10, height: 1),
-                      ListTile(
+                      if (!Platform.isIOS) ListTile(
                         leading: Icon(Icons.star_outline,
                             color: KrakenColors.accent),
                         title: Text('Rate Krak-EN Voice',
@@ -624,10 +642,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: KrakenColors.textSecondary)),
                         trailing: Icon(Icons.chevron_right,
                             color: KrakenColors.textMuted),
-                        onTap: _rateApp,
+                        onTap: Platform.isIOS ? null : _rateApp,
                       ),
                       const Divider(color: Colors.white10, height: 1),
-                      ListTile(
+                      if (!Platform.isIOS) ListTile(
                         leading: Icon(Icons.share_outlined,
                             color: KrakenColors.accent),
                         title: Text('Share App',
@@ -637,7 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: KrakenColors.textSecondary)),
                         trailing: Icon(Icons.chevron_right,
                             color: KrakenColors.textMuted),
-                        onTap: _shareApp,
+                        onTap: Platform.isIOS ? null : _shareApp,
                       ),
                       const Divider(color: Colors.white10, height: 1),
                       GestureDetector(
@@ -1059,7 +1077,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _rateApp() async {
     // Platform-aware store links
     final storeUrl = Platform.isIOS
-        ? 'https://apps.apple.com/app/krak-en-voice/id0000000000'
+        ? 'https://apps.apple.com/app/id6817940644'
         : 'https://play.google.com/store/apps/details?id=com.kraken.voice';
     final uri = Uri.parse(storeUrl);
     if (await canLaunchUrl(uri)) {
@@ -1073,7 +1091,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _shareApp() {
     final storeUrl = Platform.isIOS
-        ? 'https://apps.apple.com/app/krak-en-voice/id0000000000'
+        ? 'https://apps.apple.com/app/id6817940644'
         : 'https://play.google.com/store/apps/details?id=com.kraken.voice';
     AnchoredShare.text(context, 
       'Check out Krak-EN Voice \u2014 a private, AI-powered meeting recorder '

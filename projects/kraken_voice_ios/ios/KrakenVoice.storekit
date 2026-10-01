@@ -1,0 +1,49 @@
+{
+  "identifier": "8BEA2D17-1638-40B1-B708-3D3855701828",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.00",
+      "familyShareable": false,
+      "internalID": "1",
+      "localizations": [
+        {
+          "description": "Try recording and on-device AI free for 30 days.",
+          "displayName": "30-day Trial",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "krak_en_voice_30_day_trial",
+      "referenceName": "30-day Trial",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "2",
+      "localizations": [
+        {
+          "description": "Unlock recording and on-device AI for life. No subscription.",
+          "displayName": "Lifetime Unlock",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "krak_en_voice_full_unlock",
+      "referenceName": "Lifetime Unlock",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "ZVCZM72MN3",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

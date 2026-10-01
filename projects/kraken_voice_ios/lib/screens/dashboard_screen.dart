@@ -1,7 +1,9 @@
+import '../kernel/entitlements/ios_entitlement_service.dart';
+import '../widgets/ios_purchase_dialog.dart';
 // ignore_for_file: use_build_context_synchronously
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
+import '../kernel/audio/microphone_level.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -59,6 +61,16 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     final entitlements = RepositoryProvider.of<EntitlementService>(context, listen: false);
     _isFreeTier = !entitlements.isUnlocked('com.kraken.meeting_notes');
+    if (entitlements is IOSEntitlementService) {
+      entitlements.ready.then((_) {
+        if (mounted && !entitlements.canCreate) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) showIOSPurchaseDialog(context, entitlements);
+          });
+        }
+      });
+    }
+
 
     void refreshTier() {
       if (mounted) setState(() => _isFreeTier = !entitlements.isUnlocked('com.kraken.meeting_notes'));
@@ -124,12 +136,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     _amplitudeSubscription = audioEngine.amplitudeStream.listen((amplitude) {
       if (!mounted) return;
       setState(() {
-        // dBFS calibration
-        double dbfs = -60.0;
-        if (amplitude > 0) {
-          dbfs = 20.0 * (log(amplitude / 32767.0) / ln10);
-        }
-        final scaled = (((dbfs + 30.0) / 27.0) * _micSensitivity).clamp(0.0, 1.0);
+        final scaled = microphoneDisplayLevel(
+          amplitude,
+          sensitivity: _micSensitivity,
+          floorDecibels: Platform.isIOS ? -60 : -30,
+        );
 
         // Asymmetric smoothing
         final alpha = scaled > _smoothedAmplitude ? 0.55 : 0.28;
@@ -155,6 +166,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   // ─── Recording controls ───────────────────────────────────────────────────
 
   Future<void> _startRecording() async {
+    final store = context.read<EntitlementService>();
+    if (store is IOSEntitlementService) {
+      await store.ready;
+      if (!mounted) return;
+      if (!store.canCreate) {
+        await showIOSPurchaseDialog(context, store);
+        return;
+      }
+    }
     final hasPermission = await PermissionHelper.ensureMicrophonePermission(context);
     if (!hasPermission) return;
 
@@ -783,6 +803,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   // ─── Free-tier countdown (separate from main timer) ───────────────────────
 
   Widget _buildFreeCountdown(Duration elapsed, bool isIdle, bool isRecording) {
+    final store = context.read<EntitlementService>();
+    if (store is IOSEntitlementService) {
+      if (store.lifetimeUnlocked) return const SizedBox.shrink();
+      return TextButton.icon(
+        onPressed: () => showIOSPurchaseDialog(context, store),
+        icon: const Icon(Icons.lock_open, size: 16),
+        label: Text(store.trialActive ? '${store.trialDaysRemaining} trial days left' : 'Trial & Lifetime Unlock'),
+      );
+    }
     if (!_isFreeTier) return const SizedBox.shrink();
     if (isIdle) return const SizedBox.shrink();
 

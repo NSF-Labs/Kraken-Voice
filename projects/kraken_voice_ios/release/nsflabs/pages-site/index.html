@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NSF Labs — Building privacy-first software & precision tools</title>
+<meta name="description" content="NSF Labs LLC is a Florida-based holding company building the Krak-EN software suite, precision laser services, and a portfolio of independent ventures." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@500;700;800&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --bg-elev: #111316;
+    --bg-card: #14171b;
+    --line: #1f2429;
+    --line-bright: #2d343b;
+    --ink: #e8ebef;
+    --ink-dim: #8a939d;
+    --ink-faint: #4a525b;
+    --accent: #ff5a1f;
+    --accent-glow: rgba(255, 90, 31, 0.15);
+    --accent-soft: #ffb088;
+    --grid: rgba(255, 255, 255, 0.025);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 60px 60px;
+    background-position: -1px -1px;
+  }
+
+  /* Subtle vignette */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, var(--bg) 90%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Syne', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+
+  /* ============ NAV ============ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 18px 40px;
+    background: rgba(10, 11, 13, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--accent);
+    position: relative;
+    transform: rotate(45deg);
+  }
+  .logo-mark::before, .logo-mark::after {
+    content: '';
+    position: absolute;
+    background: var(--accent);
+  }
+  .logo-mark::before {
+    top: 50%; left: 0; right: 0; height: 1.5px;
+    transform: translateY(-50%);
+  }
+  .logo-mark::after {
+    left: 50%; top: 0; bottom: 0; width: 1.5px;
+    transform: translateX(-50%);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+  }
+  .logo-text span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a::before {
+    content: '//';
+    color: var(--accent);
+    margin-right: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nav-links a:hover::before { opacity: 1; }
+
+  .nav-cta {
+    padding: 10px 20px;
+    border: 1px solid var(--line-bright);
+    color: var(--ink);
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    min-height: 100vh;
+    padding: 140px 40px 80px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 80px;
+    align-items: end;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border: 1px solid var(--line-bright);
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 32px;
+  }
+  .hero-tag .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  h1.hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 8vw, 120px);
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+    margin-bottom: 40px;
+  }
+  h1.hero-title .accent { color: var(--accent); font-style: italic; font-weight: 700; }
+  h1.hero-title .outline {
+    -webkit-text-stroke: 1.5px var(--ink);
+    color: transparent;
+  }
+
+  .hero-sub {
+    max-width: 580px;
+    font-size: 18px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  .hero-cta-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary, .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 28px;
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.25s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0b0d;
+    font-weight: 700;
+  }
+  .btn-primary:hover {
+    background: #ff7440;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px var(--accent-glow);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-bright);
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-primary .arrow, .btn-secondary .arrow {
+    transition: transform 0.25s;
+  }
+  .btn-primary:hover .arrow, .btn-secondary:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  /* Hero side stat panel */
+  .hero-stats {
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    padding: 32px;
+    min-width: 280px;
+    position: relative;
+  }
+  .hero-stats::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 16px; height: 16px;
+    border-top: 1.5px solid var(--accent);
+    border-left: 1.5px solid var(--accent);
+  }
+  .hero-stats::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 16px; height: 16px;
+    border-bottom: 1.5px solid var(--accent);
+    border-right: 1.5px solid var(--accent);
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+  .stat-value:last-child { margin-bottom: 0; }
+  .stat-value span { color: var(--accent); }
+
+  /* ============ SECTION HELPERS ============ */
+  section { position: relative; z-index: 2; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 60px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 4vw, 56px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .section-kicker {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ============ DIVISIONS ============ */
+  .divisions {
+    padding: 120px 0;
+  }
+
+  .division-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .division {
+    background: var(--bg);
+    padding: 48px;
+    position: relative;
+    transition: background 0.3s;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+  }
+  .division:hover { background: var(--bg-elev); }
+
+  .div-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+  }
+
+  .div-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .div-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--line-bright);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+  }
+  .div-status.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .div-icon {
+    width: 56px; height: 56px;
+    border: 1px solid var(--line-bright);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .div-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .div-tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+  .div-desc {
+    color: var(--ink-dim);
+    line-height: 1.65;
+    margin-bottom: 24px;
+    font-size: 15px;
+  }
+
+  .div-products {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px dashed var(--line-bright);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .product-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .product-chip.coming { color: var(--ink-faint); border-style: dashed; }
+
+  /* ============ APPROACH STRIP ============ */
+  .approach {
+    padding: 100px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-elev);
+  }
+  .approach-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+  }
+  .principle {
+    border-left: 2px solid var(--accent);
+    padding-left: 24px;
+  }
+  .principle-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+  .principle-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .principle-body {
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ============ CONTACT ============ */
+  .contact-section {
+    padding: 120px 0;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .contact-intro h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+  }
+  .contact-intro h2 .accent { color: var(--accent); }
+  .contact-intro p {
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1.65;
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+
+  .email-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .email-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    text-decoration: none;
+    color: var(--ink);
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .email-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 4px; height: 100%;
+    background: var(--accent);
+    transition: left 0.25s;
+  }
+  .email-card:hover {
+    border-color: var(--line-bright);
+    transform: translateX(4px);
+  }
+  .email-card:hover::before { left: 0; }
+
+  .email-meta { display: flex; flex-direction: column; gap: 4px; }
+  .email-purpose {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .email-addr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .email-addr span { color: var(--accent); }
+
+  .email-arrow {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink-faint);
+    transition: color 0.25s, transform 0.25s;
+  }
+  .email-card:hover .email-arrow {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 60px 40px 40px;
+    position: relative;
+    z-index: 2;
+  }
+  .footer-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 60px;
+  }
+  .footer-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .footer-brand span { color: var(--accent); }
+  .footer-tag {
+    color: var(--ink-dim);
+    font-size: 14px;
+    max-width: 340px;
+    line-height: 1.6;
+  }
+  .footer-col h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .footer-col a, .footer-col span {
+    display: block;
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 10px;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--ink); }
+
+  .footer-bottom {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ============ DECORATIVE ============ */
+  .corner-marker {
+    position: absolute;
+    width: 12px; height: 12px;
+    border: 1px solid var(--accent);
+  }
+  .corner-tl { top: 100px; left: 24px; border-right: none; border-bottom: none; }
+  .corner-tr { top: 100px; right: 24px; border-left: none; border-bottom: none; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .hero { padding: 120px 20px 60px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+    .container { padding: 0 20px; }
+    .division-grid { grid-template-columns: 1fr; }
+    .division { padding: 32px; min-height: auto; }
+    .approach-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+    .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; gap: 8px; }
+    .section-header { flex-wrap: wrap; gap: 12px; }
+    .section-kicker { margin-left: 0; width: 100%; }
+  }
+  @media (max-width: 600px) {
+    .approach-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ============ ANIMATIONS ============ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-tag { animation: fadeUp 0.6s ease-out 0.1s both; }
+  h1.hero-title { animation: fadeUp 0.7s ease-out 0.2s both; }
+  .hero-sub { animation: fadeUp 0.7s ease-out 0.35s both; }
+  .hero-cta-row { animation: fadeUp 0.7s ease-out 0.5s both; }
+  .hero-stats { animation: fadeUp 0.7s ease-out 0.6s both; }
+
+  /* Scanline shimmer on hero */
+  .scan {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    pointer-events: none;
+    animation: scan 8s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: 10%; opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { top: 90%; opacity: 0; }
+  }
+</style>
+<link rel="stylesheet" href="/assets/app-library.css">
+</head>
+<body>
+<a class="skip-link" href="#app-library">Skip to app resources</a>
+
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-mark"></div>
+    <div class="logo-text">NSF<span>/</span>LABS</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#app-library">App resources</a></li>
+    <li><a href="#divisions">Divisions</a></li>
+    <li><a href="#approach">Approach</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#app-library" class="nav-cta">Guides &amp; privacy →</a>
+</nav>
+
+<section class="hero">
+  <div class="scan"></div>
+  <div class="corner-marker corner-tl"></div>
+  <div class="corner-marker corner-tr"></div>
+
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag">
+        <span class="dot"></span>
+        <span>NSF Labs LLC // Florida, USA</span>
+      </div>
+      <h1 class="hero-title">
+        Building <span class="accent">privacy-first</span><br>
+        software &amp; <span class="outline">precision tools.</span>
+      </h1>
+      <p class="hero-sub">
+        NSF Labs is a holding company for a portfolio of independent ventures — from the Krak-EN software suite to precision laser services. We build on-device, locally hosted, and built-to-last.
+      </p>
+      <div class="hero-cta-row">
+        <a href="#app-library" class="btn-primary">
+          Find your app
+          <span class="arrow">→</span>
+        </a>
+        <a href="#contact" class="btn-secondary">
+          Business inquiries
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-label">Entity</div>
+      <div class="stat-value">NSF Labs <span>LLC</span></div>
+      <div class="stat-label">Jurisdiction</div>
+      <div class="stat-value">Florida <span>/ US</span></div>
+      <div class="stat-label">Divisions</div>
+      <div class="stat-value">04 <span>active</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="app-library" id="app-library" aria-labelledby="library-title">
+  <div class="container">
+    <div class="section-header"><span class="section-num">[RESOURCES]</span><h2 class="section-title" id="library-title">Your app. Your answers.</h2></div>
+    <p class="library-intro">Privacy policies, practical guides, and a direct line to support. Choose your NSF Labs app below.</p>
+    <div class="app-grid">
+<!-- APP_CARDS_START -->
+<article class="app-card" id="skopos" style="--app-color:#bba5ff">
+      <div class="app-card-top"><span class="app-symbol" aria-hidden="true">✦</span><span class="app-category">Sky &amp; astronomy</span></div>
+      <h3>Skopos</h3><p class="app-description">Explore the sky, from stars and planets to satellites.</p>
+      <ul class="app-documents"><li><a href="/skopos/privacy-policy.html" aria-label="Privacy policy for Skopos"><span>Privacy policy</span><span aria-hidden="true">→</span></a></li><li><a href="/skopos/user-guide.html" aria-label="User guide for Skopos"><span>User guide</span><span aria-hidden="true">→</span></a></li></ul><p class="app-note">Privacy information for Skopos on iPhone, iPad, and Android.</p>
+    </article>
+<article class="app-card" id="voice" style="--app-color:#71d4c1">
+      <div class="app-card-top"><span class="app-symbol" aria-hidden="true">≋</span><span class="app-category">Audio &amp; notes</span></div>
+      <h3>Krak-EN Voice</h3><p class="app-description">Find privacy information and help for your voice recording and transcription app.</p>
+      <ul class="app-documents"><li><a href="/voice/privacy-policy.html" aria-label="Privacy policy for Krak-EN Voice"><span>Privacy policy</span><span aria-hidden="true">→</span></a></li><li><a href="/voice/user-guide.html" aria-label="User guide for Krak-EN Voice"><span>User guide</span><span aria-hidden="true">→</span></a></li></ul><p class="app-note">Privacy information and complete guidance for Android, iPhone, and iPad.</p>
+    </article>
+<article class="app-card" id="quotes" style="--app-color:#ffb088">
+      <div class="app-card-top"><span class="app-symbol" aria-hidden="true">↗</span><span class="app-category">Sales &amp; quoting</span></div>
+      <h3>Krak-EN Quotes</h3><p class="app-description">Customer records, quotes, and follow-ups. Get to know the tools and how your data is handled.</p>
+      <ul class="app-documents"><li><a href="/quotes/privacy-policy.html" aria-label="Privacy policy for Krak-EN Quotes"><span>Privacy policy</span><span aria-hidden="true">→</span></a></li><li><a href="/quotes/user-guide.html" aria-label="User guide for Krak-EN Quotes"><span>User guide</span><span aria-hidden="true">→</span></a></li><li><a href="/quotes/downloads/krak-en-quotes-user-guide.pdf" aria-label="Download user guide for Krak-EN Quotes"><span>Download user guide</span><span aria-hidden="true">PDF</span></a></li></ul><p class="app-note">The current guide covers the Android edition.</p>
+    </article>
+<!-- APP_CARDS_END -->
+    </div>
+    <div class="library-help"><div><h3>Need a hand?</h3><p>Tell us which app you use and what you need help with.</p></div><a href="mailto:info@nsflabs.org">Contact NSF Labs <span aria-hidden="true">↗</span></a></div>
+  </div>
+</section>
+
+<section class="divisions" id="divisions">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-num">[01]</span>
+      <h2 class="section-title">Divisions</h2>
+      <span class="section-kicker">Four lines of work, one parent</span>
+    </div>
+
+    <div class="division-grid">
+
+      <article class="division">
+        <div class="div-header">
+          <span class="div-id">DIV.01 / SOFTWARE</span>
+          <span class="div-status active">● Active</span>
+        </div>
+        <div class="div-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5a1f" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="14" rx="1"/>
+            <path d="M3 9h18M8 14l-2 2 2 2M14 14l2 2-2 2"/>
+          </svg>
+        </div>
+        <h3 class="div-name">Krak-EN Suite</h3>
+        <div class="div-tagline">// Privacy-first software</div>
+        <p class="div-desc">A growing family of on-device applications built around a hub-and-spoke architecture. No cloud sync, no freemium traps — software built around local processing and clear choices about sharing. See each app’s privacy policy for details.</p>
+        <div class="div-products">
+          <span class="product-chip">Kraken Hub</span>
+          <a class="product-chip" href="#quotes">Krak-EN Quotes</a>
+          <a class="product-chip" href="#voice">Krak-EN Voice</a>
+          <span class="product-chip coming">+ More soon</span>
+        </div>
+      </article>
+
+      <article class="division">
+        <div class="div-header">
+          <span class="div-id">DIV.02 / SERVICES</span>
+          <span class="div-status active">● Active</span>
+        </div>
+        <div class="div-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5a1f" stroke-width="1.5">
+            <path d="M4 12h16M12 4v16"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+          </svg>
+        </div>
+        <h3 class="div-name">Laser Services</h3>
+        <div class="div-tagline">// Precision &amp; craft</div>
+        <p class="div-desc">Custom laser cutting, engraving, and marking services. Hands-on work for clients who want the right cut, the right finish, and the right turnaround — without the runaround.</p>
+        <div class="div-products">
+          <span class="product-chip">Custom Cutting</span>
+          <span class="product-chip">Engraving</span>
+          <span class="product-chip">Marking</span>
+        </div>
+      </article>
+
+      <article class="division">
+        <div class="div-header">
+          <span class="div-id">DIV.03 / APPS</span>
+          <span class="div-status active">● Active</span>
+        </div>
+        <div class="div-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5a1f" stroke-width="1.5">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <circle cx="12" cy="18" r="1" fill="#ff5a1f"/>
+            <path d="M9 6h6"/>
+          </svg>
+        </div>
+        <h3 class="div-name">Mobile Ventures</h3>
+        <div class="div-tagline">// Purpose-built apps</div>
+        <p class="div-desc">A line of focused mobile applications, each solving one specific problem really well. Built independently, shipped when they're ready, and never bloated with features nobody asked for.</p>
+        <div class="div-products">
+          <span class="product-chip">Skopos</span>
+          <span class="product-chip">FW Planner</span>
+          <span class="product-chip coming">More in pipeline</span>
+        </div>
+      </article>
+
+      <article class="division">
+        <div class="div-header">
+          <span class="div-id">DIV.04 / R&amp;D</span>
+          <span class="div-status">○ Internal</span>
+        </div>
+        <div class="div-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5a1f" stroke-width="1.5">
+            <path d="M9 3h6l-1 4h-4z"/>
+            <path d="M9 7l-3 14h12l-3-14"/>
+            <path d="M8 14h8"/>
+          </svg>
+        </div>
+        <h3 class="div-name">Automation Lab</h3>
+        <div class="div-tagline">// Internal tooling &amp; research</div>
+        <p class="div-desc">Where the experiments happen. Locally hosted AI systems, agentic workflows, and the tools we build for ourselves before we decide whether they deserve to ship.</p>
+        <div class="div-products">
+          <span class="product-chip">Open Claw</span>
+          <span class="product-chip coming">Internal only</span>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="approach" id="approach">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-num">[02]</span>
+      <h2 class="section-title">Approach</h2>
+      <span class="section-kicker">How we build, why we build it</span>
+    </div>
+
+    <div class="approach-grid">
+      <div class="principle">
+        <div class="principle-num">01</div>
+        <h3 class="principle-title">On-device first</h3>
+        <p class="principle-body">Local processing comes first. Each app’s privacy policy explains its storage, optional online features, and sharing controls.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">02</div>
+        <h3 class="principle-title">Own your tools</h3>
+        <p class="principle-body">One-time purchases over subscriptions. Software you can rely on without renting it forever.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">03</div>
+        <h3 class="principle-title">Built to last</h3>
+        <p class="principle-body">Independent products, focused scope, no feature creep. We ship things when they're actually ready.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">04</div>
+        <h3 class="principle-title">Hands-on craft</h3>
+        <p class="principle-body">Whether it's a laser cut or a line of code, the work goes out the door with our name on it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section" id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-intro">
+        <h2>Let's <span class="accent">talk.</span></h2>
+        <p>Business inquiries, partnership questions, laser project quotes, or general questions about the work — we read everything that comes in and respond personally.</p>
+        <p style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em;">NSF Labs LLC // Florida, USA</p>
+      </div>
+
+      <div class="email-cards">
+        <a href="mailto:info@nsflabs.org" class="email-card">
+          <div class="email-meta">
+            <span class="email-purpose">General inquiries</span>
+            <span class="email-addr">info<span>@</span>nsflabs.org</span>
+          </div>
+          <span class="email-arrow">→</span>
+        </a>
+        <a href="mailto:contact@nsflabs.org" class="email-card">
+          <div class="email-meta">
+            <span class="email-purpose">Business &amp; partnerships</span>
+            <span class="email-addr">contact<span>@</span>nsflabs.org</span>
+          </div>
+          <span class="email-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">NSF<span>/</span>LABS</div>
+      <p class="footer-tag">A Florida LLC building privacy-first software and precision tools across an independent portfolio of ventures.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Apps &amp; resources</h4>
+      <a href="#skopos">Skopos</a>
+      <a href="#voice">Krak-EN Voice</a>
+      <a href="#quotes">Krak-EN Quotes</a>
+      <a href="#divisions">Krak-EN Suite</a>
+      <a href="#divisions">Laser Services</a>
+      <a href="#divisions">Mobile Ventures</a>
+      <a href="#divisions">Automation Lab</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="mailto:info@nsflabs.org">info@nsflabs.org</a>
+      <a href="mailto:contact@nsflabs.org">contact@nsflabs.org</a>
+      <span>Florida, USA</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <span id="year">2026</span> NSF Labs LLC. All rights reserved.</span>
+    <span>v1.0 // Built with care</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

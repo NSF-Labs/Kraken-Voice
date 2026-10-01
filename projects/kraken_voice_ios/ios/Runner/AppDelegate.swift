@@ -2,6 +2,8 @@ import Flutter
 import UIKit
 import AVFoundation
 import CryptoKit
+import StoreKit
+import PDFKit
 import os
 
 @main
@@ -14,6 +16,7 @@ import os
   private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
   private var starting = false
   private var gemma: KrakenGemmaBridge?
+  private var store: KrakenStoreBridge?
 
   override func application(_ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -27,6 +30,24 @@ import os
     guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "KrakenIOS") else { return }
     let messenger = registrar.messenger()
     gemma = KrakenGemmaBridge(messenger: messenger)
+    store = KrakenStoreBridge(messenger: messenger)
+    FlutterMethodChannel(name: "kraken.kernel/documents", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        guard call.method == "extract" else { result(FlutterMethodNotImplemented); return }
+        guard let args = call.arguments as? [String: Any], let path = args["path"] as? String else {
+          result(FlutterError(code: "DOCUMENT_ERROR", message: "No document selected.", details: nil)); return
+        }
+        KrakenPDFExtractor.queue.async {
+          do {
+            let extracted = try KrakenPDFExtractor.extract(path)
+            DispatchQueue.main.async { result(extracted) }
+          } catch {
+            let message = error.localizedDescription
+            DispatchQueue.main.async { result(FlutterError(code: "DOCUMENT_ERROR", message: message, details: nil)) }
+          }
+        }
+      }
+
     FlutterMethodChannel(name: "kraken.kernel/models", binaryMessenger: messenger).setMethodCallHandler { call, result in
       guard call.method == "installBundledWhisper",
             let args = call.arguments as? [String: Any],
@@ -220,7 +241,7 @@ private final class KrakenGemmaBridge: NSObject, FlutterStreamHandler {
     #if targetEnvironment(simulator)
     return false
     #else
-    return ProcessInfo.processInfo.physicalMemory >= 6 * 1024 * 1024 * 1024
+    return ProcessInfo.processInfo.physicalMemory >= 5 * 1024 * 1024 * 1024
     #endif
   }
   private var ready: Bool { FileManager.default.fileExists(atPath: marker.path) && Gemma4ModelCache.isDownloaded(.e2b4bit) }
@@ -228,7 +249,7 @@ private final class KrakenGemmaBridge: NSObject, FlutterStreamHandler {
     #if targetEnvironment(simulator)
     return "Gemma needs a physical device with Metal; simulator inference is unavailable."
     #else
-    return "This Gemma model needs at least 6 GB of device memory. Whisper transcription remains available."
+    return "This Gemma model needs at least 5 GB of device memory. Whisper transcription remains available."
     #endif
   }
 
@@ -356,5 +377,146 @@ private final class KrakenGemmaBridge: NSObject, FlutterStreamHandler {
     case "isModelLoaded": result(pipeline?.isReady == true)
     default: result(FlutterMethodNotImplemented)
     }
+  }
+}
+
+// StoreKit verifies Apple's signed transactions on device, including offline
+// entitlements. No preference flag or developer override grants iOS access.
+@MainActor
+final class KrakenStoreBridge {
+  static let unlockID = "krak_en_voice_full_unlock"
+  static let trialID = "krak_en_voice_30_day_trial"
+  private let channel: FlutterMethodChannel
+  private var updates: Task<Void, Never>?
+  private var products: [Product] = []
+
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "kraken.kernel/store", binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { return }
+      Task { @MainActor in
+        do {
+          switch call.method {
+          case "status": result(await self.status())
+          case "products":
+            self.products = try await Product.products(for: [Self.unlockID, Self.trialID])
+            result(self.products.map { ["id": $0.id, "price": $0.displayPrice] })
+          case "purchase":
+            guard let id = call.arguments as? String,
+                  [Self.unlockID, Self.trialID].contains(id) else {
+              throw NSError(domain: "KrakenStore", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Unknown purchase."])
+            }
+            let found = try await Product.products(for: [id])
+            guard let product = found.first, product.type == .nonConsumable else {
+              throw NSError(domain: "KrakenStore", code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "This purchase is not available. Please try again later."])
+            }
+            switch try await product.purchase() {
+            case .success(let verification):
+              guard case .verified(let transaction) = verification else {
+                throw NSError(domain: "KrakenStore", code: 3,
+                  userInfo: [NSLocalizedDescriptionKey: "Apple could not verify this purchase."])
+              }
+              await transaction.finish()
+              self.channel.invokeMethod("changed", arguments: await self.status())
+              result("purchased")
+            case .pending: result("pending")
+            case .userCancelled: result("cancelled")
+            @unknown default: result("pending")
+            }
+          case "restore":
+            try await AppStore.sync()
+            result(await self.status())
+          case "redeem":
+            guard let scene = UIApplication.shared.connectedScenes
+              .compactMap({ $0 as? UIWindowScene })
+              .first(where: { $0.activationState == .foregroundActive }) else {
+              throw NSError(domain: "KrakenStore", code: 4,
+                userInfo: [NSLocalizedDescriptionKey: "Open the app to redeem your code."])
+            }
+            try await AppStore.presentOfferCodeRedeemSheet(in: scene)
+            result(await self.status())
+          default: result(FlutterMethodNotImplemented)
+          }
+        } catch {
+          result(FlutterError(code: "STORE_ERROR", message: error.localizedDescription, details: nil))
+        }
+      }
+    }
+    updates = Task { [weak self] in
+      for await update in StoreKit.Transaction.updates {
+        guard let self else { return }
+        guard case .verified(let transaction) = update,
+              [Self.unlockID, Self.trialID].contains(transaction.productID) else { continue }
+        await transaction.finish()
+        self.channel.invokeMethod("changed", arguments: await self.status())
+      }
+    }
+  }
+
+  deinit { updates?.cancel() }
+
+  private func status() async -> [String: Any] {
+    var unlocked = false
+    var trialStart: Date?
+    for await verification in StoreKit.Transaction.currentEntitlements {
+      guard case .verified(let transaction) = verification,
+            transaction.revocationDate == nil, !transaction.isUpgraded else { continue }
+      if transaction.productID == Self.unlockID { unlocked = true }
+      if transaction.productID == Self.trialID {
+        trialStart = min(trialStart ?? transaction.originalPurchaseDate, transaction.originalPurchaseDate)
+      }
+    }
+    // A persisted high-water mark prevents moving the clock backwards from
+    // extending a trial on this installation. The start comes only from Apple.
+    let key = "kraken.store.latestObservedTime"
+    let now = max(Date().timeIntervalSince1970, UserDefaults.standard.double(forKey: key))
+    UserDefaults.standard.set(now, forKey: key)
+    var state: [String: Any] = ["unlocked": unlocked, "nowMs": now * 1000]
+    if let trialStart {
+      state["trialEndMs"] = trialStart.addingTimeInterval(30 * 24 * 60 * 60).timeIntervalSince1970 * 1000
+    }
+    return state
+  }
+}
+
+
+/// Serial, off-main-thread PDF extraction; content never leaves the device.
+enum KrakenPDFExtractor {
+  static let queue = DispatchQueue(label: "org.krak-en.voice.documents", qos: .userInitiated)
+  static func extract(_ path: String) throws -> [String: String] {
+    func failure(_ message: String) -> NSError {
+      NSError(domain: "KrakenDocuments", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+    let url = URL(fileURLWithPath: path)
+    guard url.pathExtension.lowercased() == "pdf" else {
+      throw failure("Choose a PDF or Word .docx document.")
+    }
+    let attributes = try FileManager.default.attributesOfItem(atPath: path)
+    let size = (attributes[.size] as? NSNumber)?.intValue ?? 0
+    guard size > 0 && size <= 50 * 1024 * 1024 else {
+      throw failure("Choose a non-empty document smaller than 50 MB.")
+    }
+    guard let pdf = PDFDocument(url: url) else { throw failure("Unable to read this PDF. Try exporting a new copy.") }
+    guard !pdf.isLocked else { throw failure("This PDF is password-protected. Import an unlocked copy.") }
+    guard pdf.allowsCopying else { throw failure("This PDF does not allow text extraction. Import a copy that allows copying.") }
+    guard (1...200).contains(pdf.pageCount) else { throw failure("Import a PDF with 1–200 pages, or split it into smaller documents.") }
+    var parts: [String] = []
+    var textCount = 0
+    var emptyPages = 0
+    for index in 0..<pdf.pageCount {
+      let text: String = autoreleasepool {
+        (pdf.page(at: index)?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+      }
+      textCount += text.utf16.count + 2
+      guard textCount <= 500000 else { throw failure("This document contains too much text. Split it into smaller documents.") }
+      if text.isEmpty { emptyPages += 1 } else { parts.append(text) }
+    }
+    guard !parts.isEmpty else { throw failure("No readable text found. Scanned PDFs and images need OCR before importing.") }
+    let warning = emptyPages > 0
+      ? "\(emptyPages) of \(pdf.pageCount) pages have no readable text. They may be blank or scanned; summaries include extracted text only."
+      : ""
+    return ["text": parts.joined(separator: "\n\n"), "warning": warning]
   }
 }

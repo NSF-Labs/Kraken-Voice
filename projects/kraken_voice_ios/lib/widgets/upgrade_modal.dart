@@ -1,3 +1,5 @@
+import '../kernel/entitlements/ios_entitlement_service.dart';
+import 'ios_purchase_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../kernel/kernel.dart';
@@ -19,6 +21,11 @@ void showUpgradeModal(
   bool reachedLimit = false,
   VoidCallback? onPurchaseStateChanged,
 }) {
+  final store = context.read<EntitlementService>();
+  if (store is IOSEntitlementService) {
+    showIOSPurchaseDialog(context, store).then((_) => onPurchaseStateChanged?.call());
+    return;
+  }
   showDialog(
     context: context,
     barrierDismissible: !reachedLimit,

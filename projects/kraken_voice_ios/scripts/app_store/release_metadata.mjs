@@ -1,0 +1,18 @@
+import {readFileSync, writeFileSync} from 'node:fs';
+import {api} from './api.mjs';
+const fetchOriginal=fetch; globalThis.fetch=(u,o)=>fetchOriginal(u,{...o,signal:AbortSignal.timeout(30000)});
+const m=JSON.parse(readFileSync(new URL('../../release/store-metadata.json',import.meta.url)));
+const update=(type,id,attributes,relationships)=>api('PATCH',`/v1/${type}/${id}`,{data:{type,id,...(attributes?{attributes}:{}),...(relationships?{relationships}:{})}});
+const results=[];
+results.push(await update('appStoreVersionLocalizations','41fcfa6c-79ca-4da7-bbea-3f0511690ed0',Object.fromEntries(['description','keywords','promotionalText','supportUrl','marketingUrl'].map(k=>[k,m[k]]))));
+results.push(await update('appInfoLocalizations','33d8f233-1bb7-4cb0-a7f1-eddb080224b5',{name:m.name,subtitle:m.subtitle}));
+results.push(await update('appStoreVersions','38743d7d-f77a-4480-85d5-202a072601de',{copyright:m.copyright}));
+results.push(await update('appStoreReviewDetails','afa2b4f7-82a4-4166-965b-ca948dfea6fa',{notes:m.reviewNotes,demoAccountRequired:false}));
+results.push(await update('appInfos','7eae0961-ae42-4c4a-b9d2-e8698501e9ba',null,{primaryCategory:{data:{type:'appCategories',id:'PRODUCTIVITY'}}}));
+results.push(await update('apps','6817940644',{contentRightsDeclaration:'DOES_NOT_USE_THIRD_PARTY_CONTENT'}));
+const booleanFields=['advertising','gambling','healthOrWellnessTopics','lootBox','messagingAndChat','parentalControls','ageAssurance','socialMedia','socialMediaAgeRestricted','unrestrictedWebAccess','userGeneratedContent'];
+const frequencyFields=['alcoholTobaccoOrDrugUseOrReferences','contests','gamblingSimulated','gunsOrOtherWeapons','medicalOrTreatmentInformation','profanityOrCrudeHumor','sexualContentGraphicAndNudity','sexualContentOrNudity','horrorOrFearThemes','matureOrSuggestiveThemes','violenceCartoonOrFantasy','violenceRealisticProlongedGraphicOrSadistic','violenceRealistic'];
+results.push(await update('ageRatingDeclarations','7eae0961-ae42-4c4a-b9d2-e8698501e9ba',{...Object.fromEntries(booleanFields.map(k=>[k,false])),...Object.fromEntries(frequencyFields.map(k=>[k,'NONE'])),ageRatingOverrideV2:'THIRTEEN_PLUS',developerAgeRatingInfoUrl:'https://krak-en.org/voice/privacy-policy'}));
+const summary=results.map(r=>({type:r.data.type,id:r.data.id,attributes:r.data.attributes}));
+writeFileSync(new URL('../../release/store-metadata-applied.json',import.meta.url),JSON.stringify({updatedAt:new Date().toISOString(),results:summary},null,2)+'\n');
+console.log(summary.map(r=>({type:r.type,id:r.id,updated:true})));

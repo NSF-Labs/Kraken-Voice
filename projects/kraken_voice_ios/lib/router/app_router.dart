@@ -163,6 +163,7 @@ class _ShellLayout extends StatelessWidget {
               return NavigationBar(
                 selectedIndex: navigationShell.currentIndex,
                 onDestinationSelected: (index) {
+                  FocusManager.instance.primaryFocus?.unfocus();
                   navigationShell.goBranch(
                     index,
                     initialLocation: index == navigationShell.currentIndex,

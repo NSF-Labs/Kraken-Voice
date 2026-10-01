@@ -1,3 +1,4 @@
+import '../entitlements/creation_access.dart';
 import '../processing/background_processing.dart';
 import '../inference/summary_generation_service.dart';
 import '../../data/recording_repository.dart';
@@ -248,6 +249,7 @@ class TranscriptionEngine {
     String audioPath, {
     String language = 'en',
   }) async {
+    await CreationAccess.require();
     final job = TranscriptionJob(
       id: const Uuid().v4(),
       audioPath: audioPath,
@@ -783,6 +785,7 @@ class TranscriptionEngine {
   }
 
   Future<String> transcribeFile(String audioPath, {String lang = 'en'}) async {
+    await CreationAccess.require();
     final ext = audioPath.split('.').last.toLowerCase();
     debugPrint('🎙️ [WHISPER] transcribeFile called');
     debugPrint('   Path: $audioPath');
@@ -836,6 +839,7 @@ class TranscriptionEngine {
     String audioPath, {
     String lang = 'en',
   }) async {
+    await CreationAccess.require();
     try {
       final whisperLang = (lang == 'auto') ? '' : lang;
       final result = await _controller.transcribe(
